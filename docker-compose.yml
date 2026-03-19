@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   db:
     image: postgres:16-alpine
@@ -12,6 +10,11 @@ services:
       - "5408:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lernportal"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   app:
     build: .
@@ -22,8 +25,10 @@ services:
       DATABASE_URL: postgresql://lernportal:lernportal@db:5432/lernportal
       NEXTAUTH_URL: http://localhost:3113
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-dev-secret-change-me}
+      AUTH_TRUST_HOST: "true"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     volumes:
       - materials_data:/app/data/materials
       - certificates_data:/app/data/certificates
