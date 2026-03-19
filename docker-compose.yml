@@ -9,7 +9,7 @@ services:
       POSTGRES_PASSWORD: lernportal
       POSTGRES_DB: lernportal
     ports:
-      - "5432:5432"
+      - "5408:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
@@ -17,10 +17,10 @@ services:
     build: .
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "3113:3000"
     environment:
       DATABASE_URL: postgresql://lernportal:lernportal@db:5432/lernportal
-      NEXTAUTH_URL: http://localhost:3000
+      NEXTAUTH_URL: http://localhost:3113
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-dev-secret-change-me}
     depends_on:
       - db
@@ -32,8 +32,7 @@ services:
     image: nginx:alpine
     restart: unless-stopped
     ports:
-      - "80:80"
-      - "443:443"
+      - "3114:80"
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
     depends_on:
