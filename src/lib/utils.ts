@@ -1,6 +1,11 @@
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
-import type { CompetenceLevel, BusinessRole, TrackCategory } from "@prisma/client"
+import type {
+  CompetenceLevel,
+  BusinessRole,
+  TrackCategory,
+  SubmissionStatus,
+} from "@prisma/client"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -41,4 +46,35 @@ const TRACK_CATEGORY_LABEL: Record<TrackCategory, string> = {
 
 export function formatTrackCategory(category: TrackCategory): string {
   return TRACK_CATEGORY_LABEL[category] ?? category
+}
+
+const SUBMISSION_STATUS_LABEL: Record<SubmissionStatus, string> = {
+  SUBMITTED: "Eingereicht",
+  IN_REVIEW: "In Review",
+  APPROVED: "Freigegeben",
+  REWORK: "Nacharbeit",
+}
+
+export function formatSubmissionStatus(status: SubmissionStatus): string {
+  return SUBMISSION_STATUS_LABEL[status] ?? status
+}
+
+export function submissionStatusVariant(
+  status: SubmissionStatus
+): "default" | "secondary" | "success" | "destructive" | "outline" {
+  switch (status) {
+    case "APPROVED":
+      return "success"
+    case "REWORK":
+      return "destructive"
+    case "IN_REVIEW":
+      return "default"
+    case "SUBMITTED":
+    default:
+      return "secondary"
+  }
+}
+
+export function requiresWorkProduct(level: CompetenceLevel): boolean {
+  return level === "L2" || level === "L3" || level === "L4"
 }

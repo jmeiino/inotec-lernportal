@@ -40,6 +40,13 @@ enum BusinessRole {
   FUEHRUNG
 }
 
+enum SubmissionStatus {
+  SUBMITTED
+  IN_REVIEW
+  APPROVED
+  REWORK
+}
+
 enum EnrollmentStatus {
   ACTIVE
   COMPLETED
@@ -89,6 +96,9 @@ model User {
   comments         Comment[]
   certificates     Certificate[]
   trainedSchedules Schedule[]       @relation("TrainerSchedules")
+
+  submissions      WorkProductSubmission[] @relation("SubmissionAuthor")
+  reviews          WorkProductSubmission[] @relation("SubmissionReviewer")
 
   accounts Account[]
   sessions Session[]
@@ -158,13 +168,14 @@ model Module {
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
 
-  track     Track            @relation(fields: [trackId], references: [id], onDelete: Cascade)
-  lessons   Lesson[]
-  progress  ModuleProgress[]
-  quizzes   Quiz[]
-  materials Material[]
-  comments  Comment[]
-  schedules Schedule[]
+  track       Track            @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  lessons     Lesson[]
+  progress    ModuleProgress[]
+  quizzes     Quiz[]
+  materials   Material[]
+  comments    Comment[]
+  schedules   Schedule[]
+  submissions WorkProductSubmission[]
 }
 
 model Lesson {
@@ -316,6 +327,30 @@ model Schedule {
   trainer User   @relation("TrainerSchedules", fields: [trainerId], references: [id])
 
   registrations ScheduleRegistration[]
+}
+
+model WorkProductSubmission {
+  id            String           @id @default(uuid())
+  userId        String
+  moduleId      String
+  title         String
+  descriptionMd String           @db.Text
+  externalUrl   String?
+  status        SubmissionStatus @default(SUBMITTED)
+  reviewerId    String?
+  reviewNotes   String?          @db.Text
+  submittedAt   DateTime         @default(now())
+  reviewedAt    DateTime?
+  updatedAt     DateTime         @updatedAt
+
+  user     User   @relation("SubmissionAuthor", fields: [userId], references: [id], onDelete: Cascade)
+  module   Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  reviewer User?  @relation("SubmissionReviewer", fields: [reviewerId], references: [id])
+
+  @@index([userId])
+  @@index([moduleId])
+  @@index([reviewerId])
+  @@index([status])
 }
 
 model ScheduleRegistration {

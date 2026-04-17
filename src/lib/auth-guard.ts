@@ -21,3 +21,7 @@ export async function requireAdmin() {
 export async function requireTrainer() {
   return requireRole(["ADMIN", "TRAINER"])
 }
+
+export async function requireReviewer() {
+  return requireRole(["ADMIN", "TRAINER", "MULTIPLICATOR", "CHAMPION"])
+}

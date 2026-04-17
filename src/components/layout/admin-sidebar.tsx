@@ -8,10 +8,12 @@ import {
   Users,
   BookOpen,
   ClipboardList,
+  ClipboardCheck,
   Calendar,
   ArrowLeft,
   Menu,
 } from "lucide-react"
+import type { Role } from "@prisma/client"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -22,16 +24,31 @@ import {
 } from "@/components/ui/sheet"
 import { UserMenu } from "./user-menu"
 
-const navItems = [
-  { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/admin/users", label: "Nutzerverwaltung", icon: Users },
-  { href: "/admin/courses", label: "Kurs-Editor", icon: BookOpen },
-  { href: "/admin/quizzes", label: "Quiz-Editor", icon: ClipboardList },
-  { href: "/admin/calendar", label: "Kalender", icon: Calendar },
+type NavItem = {
+  href: string
+  label: string
+  icon: React.ComponentType<{ className?: string }>
+  allowed: Role[]
+}
+
+const navItems: NavItem[] = [
+  { href: "/admin", label: "Dashboard", icon: LayoutDashboard, allowed: ["ADMIN", "TRAINER"] },
+  { href: "/admin/users", label: "Nutzerverwaltung", icon: Users, allowed: ["ADMIN", "TRAINER"] },
+  { href: "/admin/courses", label: "Kurs-Editor", icon: BookOpen, allowed: ["ADMIN", "TRAINER"] },
+  { href: "/admin/quizzes", label: "Quiz-Editor", icon: ClipboardList, allowed: ["ADMIN", "TRAINER"] },
+  { href: "/admin/review", label: "Review-Queue", icon: ClipboardCheck, allowed: ["ADMIN", "TRAINER", "MULTIPLICATOR", "CHAMPION"] },
+  { href: "/admin/calendar", label: "Kalender", icon: Calendar, allowed: ["ADMIN", "TRAINER"] },
 ]
 
-function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
+function SidebarContent({
+  onNavigate,
+  role,
+}: {
+  onNavigate?: () => void
+  role: Role
+}) {
   const pathname = usePathname()
+  const visibleItems = navItems.filter((i) => i.allowed.includes(role))
 
   return (
     <div className="flex flex-col h-full">
@@ -43,7 +60,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       </div>
 
       <nav className="flex-1 p-4 space-y-1">
-        {navItems.map((item) => {
+        {visibleItems.map((item) => {
           const isActive =
             item.href === "/admin"
               ? pathname === "/admin"
@@ -82,14 +99,14 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   )
 }
 
-export function AdminSidebar() {
+export function AdminSidebar({ role }: { role: Role }) {
   const [open, setOpen] = React.useState(false)
 
   return (
     <>
       {/* Desktop sidebar */}
       <aside className="hidden md:flex md:w-64 md:flex-col bg-card border-r shrink-0">
-        <SidebarContent />
+        <SidebarContent role={role} />
       </aside>
 
       {/* Mobile header */}
@@ -109,7 +126,7 @@ export function AdminSidebar() {
           </SheetTrigger>
           <SheetContent side="left" className="p-0 w-64">
             <SheetTitle className="sr-only">Navigation</SheetTitle>
-            <SidebarContent onNavigate={() => setOpen(false)} />
+            <SidebarContent role={role} onNavigate={() => setOpen(false)} />
           </SheetContent>
         </Sheet>
       </header>

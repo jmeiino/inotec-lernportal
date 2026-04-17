@@ -24,7 +24,9 @@ import { Progress } from "@/components/ui/progress"
 import { Separator } from "@/components/ui/separator"
 import { CommentSection } from "@/components/comments/comment-section"
 import { ScheduleList } from "@/components/schedule/schedule-list"
-import { formatCompetenceLevel } from "@/lib/utils"
+import { SubmissionSection } from "@/components/submissions/submission-section"
+import { getMySubmissionsForModule } from "@/lib/actions/submissions"
+import { formatCompetenceLevel, requiresWorkProduct } from "@/lib/utils"
 
 const formatLabels: Record<string, { label: string; icon: typeof Monitor }> = {
   ONLINE: { label: "Online", icon: Monitor },
@@ -58,6 +60,9 @@ export default async function ModuleDetailPage({
 
   const formatInfo = formatLabels[mod.format] || formatLabels.ONLINE
   const FormatIcon = formatInfo.icon
+
+  const workProductRequired = requiresWorkProduct(mod.track.competenceLevel)
+  const mySubmissions = await getMySubmissionsForModule(mod.id)
 
   return (
     <div className="space-y-6">
@@ -240,6 +245,15 @@ export default async function ModuleDetailPage({
           {/* Schedule List (for PRESENCE/HYBRID modules) */}
           {(mod.format === "PRESENCE" || mod.format === "HYBRID") && (
             <ScheduleList moduleId={mod.id} />
+          )}
+
+          {/* Arbeitsprodukt-Einreichung */}
+          {(workProductRequired || mySubmissions.length > 0) && (
+            <SubmissionSection
+              moduleId={mod.id}
+              required={workProductRequired}
+              initialSubmissions={mySubmissions}
+            />
           )}
 
           {/* Comments */}
