@@ -12,6 +12,7 @@ import {
   Calendar,
   Grid3x3,
   MessageSquare,
+  Sparkles,
   ArrowLeft,
   Menu,
 } from "lucide-react"
@@ -41,6 +42,7 @@ const navItems: NavItem[] = [
   { href: "/admin/review", label: "Review-Queue", icon: ClipboardCheck, allowed: ["ADMIN", "TRAINER", "MULTIPLICATOR", "CHAMPION"] },
   { href: "/admin/surveys", label: "Umfragen", icon: MessageSquare, allowed: ["ADMIN"] },
   { href: "/admin/heatmap", label: "Heatmap", icon: Grid3x3, allowed: ["ADMIN", "TRAINER", "MULTIPLICATOR", "CHAMPION"] },
+  { href: "/admin/tools", label: "KI-Tools", icon: Sparkles, allowed: ["ADMIN", "TRAINER"] },
   { href: "/admin/calendar", label: "Kalender", icon: Calendar, allowed: ["ADMIN", "TRAINER"] },
 ]
 

@@ -61,6 +61,12 @@ enum SurveyQuestionType {
   MULTIPLE_CHOICE
 }
 
+enum Tool {
+  CHATGPT
+  CLAUDE
+  OPENWEBUI
+}
+
 enum EnrollmentStatus {
   ACTIVE
   COMPLETED
@@ -113,6 +119,9 @@ model User {
 
   submissions      WorkProductSubmission[] @relation("SubmissionAuthor")
   reviews          WorkProductSubmission[] @relation("SubmissionReviewer")
+
+  toolAccess    ToolAccess[]
+  toolUsageLogs ToolUsageLog[]
 
   accounts Account[]
   sessions Session[]
@@ -341,6 +350,37 @@ model Schedule {
   trainer User   @relation("TrainerSchedules", fields: [trainerId], references: [id])
 
   registrations ScheduleRegistration[]
+}
+
+model ToolAccess {
+  id        String   @id @default(uuid())
+  userId    String
+  tool      Tool
+  enabled   Boolean  @default(false)
+  updatedAt DateTime @updatedAt
+  updatedBy String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, tool])
+  @@index([tool])
+}
+
+model ToolUsageLog {
+  id          String   @id @default(uuid())
+  userId      String
+  tool        Tool
+  promptHash  String?
+  tokensIn    Int?
+  tokensOut   Int?
+  metadata    Json?
+  occurredAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([tool])
+  @@index([occurredAt])
 }
 
 model Survey {

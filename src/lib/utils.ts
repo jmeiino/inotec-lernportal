@@ -7,6 +7,7 @@ import type {
   SubmissionStatus,
   SurveyType,
   SurveyQuestionType,
+  Tool,
 } from "@prisma/client"
 
 export function cn(...inputs: ClassValue[]) {
@@ -101,4 +102,14 @@ const SURVEY_QUESTION_TYPE_LABEL: Record<SurveyQuestionType, string> = {
 
 export function formatSurveyQuestionType(type: SurveyQuestionType): string {
   return SURVEY_QUESTION_TYPE_LABEL[type] ?? type
+}
+
+const TOOL_LABEL: Record<Tool, string> = {
+  CHATGPT: "ChatGPT",
+  CLAUDE: "Claude",
+  OPENWEBUI: "OpenWebUI",
+}
+
+export function formatTool(tool: Tool): string {
+  return TOOL_LABEL[tool] ?? tool
 }

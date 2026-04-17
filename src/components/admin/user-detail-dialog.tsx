@@ -33,8 +33,13 @@ import {
   enrollUserInTrack,
   removeUserFromTrack,
 } from "@/lib/actions/admin"
-import type { Role, BusinessRole } from "@prisma/client"
-import { formatBusinessRole } from "@/lib/utils"
+import {
+  getEffectiveToolAccess,
+  setToolAccess,
+} from "@/lib/actions/tools"
+import { TOOL_LIST } from "@/lib/tool-constants"
+import type { Role, BusinessRole, Tool } from "@prisma/client"
+import { formatBusinessRole, formatTool } from "@/lib/utils"
 
 interface UserDetailDialogProps {
   userId: string | null
@@ -73,17 +78,35 @@ export function UserDetailDialog({
   const [user, setUser] = useState<UserDetail | null>(null)
   const [loading, setLoading] = useState(false)
   const [actionLoading, setActionLoading] = useState(false)
+  const [toolAccess, setToolAccessState] = useState<Record<Tool, boolean> | null>(
+    null
+  )
 
   useEffect(() => {
     if (userId && open) {
       setLoading(true)
-      getUserDetail(userId)
-        .then(setUser)
+      Promise.all([getUserDetail(userId), getEffectiveToolAccess(userId)])
+        .then(([u, access]) => {
+          setUser(u)
+          setToolAccessState(access)
+        })
         .finally(() => setLoading(false))
     } else {
       setUser(null)
+      setToolAccessState(null)
     }
   }, [userId, open])
+
+  async function handleToolToggle(tool: Tool, enabled: boolean) {
+    if (!userId) return
+    setActionLoading(true)
+    try {
+      await setToolAccess(userId, tool, enabled)
+      setToolAccessState((prev) => (prev ? { ...prev, [tool]: enabled } : prev))
+    } finally {
+      setActionLoading(false)
+    }
+  }
 
   async function handleRoleChange(role: string) {
     if (!userId) return
@@ -217,6 +240,7 @@ export function UserDetailDialog({
                 <TabsTrigger value="enrollments">Einschreibungen</TabsTrigger>
                 <TabsTrigger value="progress">Fortschritt</TabsTrigger>
                 <TabsTrigger value="attempts">Quiz-Versuche</TabsTrigger>
+                <TabsTrigger value="tools">Tool-Zugang</TabsTrigger>
               </TabsList>
 
               <TabsContent value="enrollments" className="space-y-3">
@@ -353,6 +377,44 @@ export function UserDetailDialog({
                       ))}
                     </TableBody>
                   </Table>
+                )}
+              </TabsContent>
+
+              <TabsContent value="tools" className="space-y-3">
+                {toolAccess === null ? (
+                  <p className="text-sm text-muted-foreground py-4">
+                    Laden...
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    <p className="text-xs text-muted-foreground">
+                      Standard: ChatGPT aktiv fuer alle, Claude und OpenWebUI
+                      nur nach manueller Freigabe.
+                    </p>
+                    {TOOL_LIST.map((t) => (
+                      <div
+                        key={t}
+                        className="flex items-center justify-between border rounded-lg px-3 py-2"
+                      >
+                        <div className="space-y-0.5">
+                          <div className="text-sm font-medium">
+                            {formatTool(t)}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {toolAccess[t] ? "Freigegeben" : "Gesperrt"}
+                          </div>
+                        </div>
+                        <Button
+                          variant={toolAccess[t] ? "outline" : "default"}
+                          size="sm"
+                          disabled={actionLoading}
+                          onClick={() => handleToolToggle(t, !toolAccess[t])}
+                        >
+                          {toolAccess[t] ? "Sperren" : "Freigeben"}
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
                 )}
               </TabsContent>
 
