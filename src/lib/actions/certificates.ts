@@ -2,13 +2,14 @@
 
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
+import type { CompetenceLevel } from "@prisma/client"
 
 export type CertificateData = {
   id: string
   certNumber: string
   issuedAt: Date
   trackName: string
-  trackLevel: string
+  competenceLevel: CompetenceLevel
   userName: string
 }
 
@@ -25,7 +26,7 @@ export async function getUserCertificates(): Promise<{
     const certificates = await prisma.certificate.findMany({
       where: { userId: session.user.id },
       include: {
-        track: { select: { name: true, level: true } },
+        track: { select: { name: true, competenceLevel: true } },
         user: { select: { name: true } },
       },
       orderBy: { issuedAt: "desc" },
@@ -37,7 +38,7 @@ export async function getUserCertificates(): Promise<{
         certNumber: c.certNumber,
         issuedAt: c.issuedAt,
         trackName: c.track.name,
-        trackLevel: c.track.level,
+        competenceLevel: c.track.competenceLevel,
         userName: c.user.name,
       })),
     }

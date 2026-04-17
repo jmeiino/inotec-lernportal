@@ -9,7 +9,7 @@ export async function getModuleDetail(moduleId: string, userId: string) {
       where: { id: moduleId },
       include: {
         track: {
-          select: { id: true, name: true, level: true },
+          select: { id: true, name: true, competenceLevel: true, category: true, businessRole: true },
         },
         lessons: {
           orderBy: { sortOrder: "asc" },

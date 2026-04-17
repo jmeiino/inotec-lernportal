@@ -17,10 +17,19 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { LessonEditor } from "@/components/admin/lesson-editor"
 import { MaterialManager } from "@/components/admin/material-manager"
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
   getCoursesTree,
   getModuleDetail,
   updateModule,
   reorderLessons,
+  updateTrack,
 } from "@/lib/actions/courses"
 import {
   ChevronRight,
@@ -29,9 +38,31 @@ import {
   GripVertical,
   Plus,
   Save,
+  Pencil,
 } from "lucide-react"
-import { cn } from "@/lib/utils"
-import type { ModuleFormat } from "@prisma/client"
+import {
+  cn,
+  formatCompetenceLevel,
+  formatBusinessRole,
+  formatTrackCategory,
+} from "@/lib/utils"
+import type {
+  ModuleFormat,
+  CompetenceLevel,
+  TrackCategory,
+  BusinessRole,
+} from "@prisma/client"
+
+const COMPETENCE_LEVELS: CompetenceLevel[] = ["L1", "L2", "L3", "L4", "F1", "F2", "F3"]
+const TRACK_CATEGORIES: TrackCategory[] = ["FACH", "FUEHRUNG"]
+const BUSINESS_ROLES: BusinessRole[] = [
+  "VERTRIEB",
+  "PRODUKTION",
+  "VERWALTUNG",
+  "IT",
+  "HR",
+  "FUEHRUNG",
+]
 
 type CoursesTree = Awaited<ReturnType<typeof getCoursesTree>>
 type ModuleDetail = Awaited<ReturnType<typeof getModuleDetail>>
@@ -50,6 +81,15 @@ export function CoursesClient({ initialTree }: CoursesClientProps) {
   const [editingLessonId, setEditingLessonId] = useState<string | null>(null)
   const [creatingLesson, setCreatingLesson] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [editingTrackId, setEditingTrackId] = useState<string | null>(null)
+  const [trackForm, setTrackForm] = useState<{
+    name: string
+    description: string
+    competenceLevel: CompetenceLevel
+    category: TrackCategory
+    businessRole: BusinessRole | "__none__"
+  } | null>(null)
+  const [trackSaving, setTrackSaving] = useState(false)
 
   // Module metadata form
   const [metaTitle, setMetaTitle] = useState("")
@@ -124,6 +164,39 @@ export function CoursesClient({ initialTree }: CoursesClientProps) {
     })
   }
 
+  function openTrackEdit(trackId: string) {
+    const track = tree.find((t) => t.id === trackId)
+    if (!track) return
+    setEditingTrackId(trackId)
+    setTrackForm({
+      name: track.name,
+      description: track.description ?? "",
+      competenceLevel: track.competenceLevel,
+      category: track.category,
+      businessRole: track.businessRole ?? "__none__",
+    })
+  }
+
+  async function handleSaveTrack() {
+    if (!editingTrackId || !trackForm) return
+    setTrackSaving(true)
+    try {
+      await updateTrack(editingTrackId, {
+        name: trackForm.name,
+        description: trackForm.description || null,
+        competenceLevel: trackForm.competenceLevel,
+        category: trackForm.category,
+        businessRole:
+          trackForm.businessRole === "__none__" ? null : trackForm.businessRole,
+      })
+      await refreshTree()
+      setEditingTrackId(null)
+      setTrackForm(null)
+    } finally {
+      setTrackSaving(false)
+    }
+  }
+
   async function moveLessonUp(lessonIndex: number) {
     if (!moduleDetail || lessonIndex <= 0) return
     const lessons = [...moduleDetail.lessons]
@@ -166,20 +239,45 @@ export function CoursesClient({ initialTree }: CoursesClientProps) {
         <div className="p-2 space-y-1">
           {tree.map((track) => (
             <div key={track.id}>
-              <button
-                className="flex items-center gap-2 w-full px-2 py-1.5 rounded text-sm font-medium hover:bg-muted text-left"
-                onClick={() => toggleTrack(track.id)}
-              >
-                {expandedTracks.has(track.id) ? (
-                  <ChevronDown className="h-4 w-4 shrink-0" />
-                ) : (
-                  <ChevronRight className="h-4 w-4 shrink-0" />
-                )}
-                <span className="truncate">{track.name}</span>
-                <Badge variant="secondary" className="ml-auto text-[10px]">
-                  {track.modules.length}
-                </Badge>
-              </button>
+              <div className="flex items-center gap-1 w-full">
+                <button
+                  className="flex items-center gap-2 flex-1 px-2 py-1.5 rounded text-sm font-medium hover:bg-muted text-left"
+                  onClick={() => toggleTrack(track.id)}
+                >
+                  {expandedTracks.has(track.id) ? (
+                    <ChevronDown className="h-4 w-4 shrink-0" />
+                  ) : (
+                    <ChevronRight className="h-4 w-4 shrink-0" />
+                  )}
+                  <span className="truncate">{track.name}</span>
+                  <Badge variant="secondary" className="ml-auto text-[10px]">
+                    {track.modules.length}
+                  </Badge>
+                </button>
+                <button
+                  className="p-1 text-muted-foreground hover:text-foreground"
+                  onClick={() => openTrackEdit(track.id)}
+                  aria-label="Lernpfad bearbeiten"
+                  title="Lernpfad bearbeiten"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                </button>
+              </div>
+              {expandedTracks.has(track.id) && (
+                <div className="ml-4 mb-1 px-2 py-1 flex flex-wrap gap-1">
+                  <Badge variant="outline" className="text-[10px]">
+                    {formatCompetenceLevel(track.competenceLevel)}
+                  </Badge>
+                  <Badge variant="outline" className="text-[10px]">
+                    {formatTrackCategory(track.category)}
+                  </Badge>
+                  {track.businessRole && (
+                    <Badge variant="outline" className="text-[10px]">
+                      {formatBusinessRole(track.businessRole)}
+                    </Badge>
+                  )}
+                </div>
+              )}
               {expandedTracks.has(track.id) && (
                 <div className="ml-4 space-y-0.5">
                   {track.modules.map((mod) => (
@@ -363,6 +461,145 @@ export function CoursesClient({ initialTree }: CoursesClientProps) {
           </div>
         )}
       </div>
+
+      {/* Track edit dialog */}
+      <Dialog
+        open={editingTrackId !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setEditingTrackId(null)
+            setTrackForm(null)
+          }
+        }}
+      >
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Lernpfad bearbeiten</DialogTitle>
+            <DialogDescription>
+              Stufe, Kategorie und Ziel-Rolle des Lernpfads festlegen.
+            </DialogDescription>
+          </DialogHeader>
+          {trackForm && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="track-name">Name</Label>
+                <Input
+                  id="track-name"
+                  value={trackForm.name}
+                  onChange={(e) =>
+                    setTrackForm((prev) =>
+                      prev ? { ...prev, name: e.target.value } : prev
+                    )
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="track-desc">Beschreibung</Label>
+                <Textarea
+                  id="track-desc"
+                  value={trackForm.description}
+                  onChange={(e) =>
+                    setTrackForm((prev) =>
+                      prev ? { ...prev, description: e.target.value } : prev
+                    )
+                  }
+                  className="min-h-[100px]"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="track-level">Kompetenz-Stufe</Label>
+                  <Select
+                    value={trackForm.competenceLevel}
+                    onValueChange={(v) =>
+                      setTrackForm((prev) =>
+                        prev ? { ...prev, competenceLevel: v as CompetenceLevel } : prev
+                      )
+                    }
+                  >
+                    <SelectTrigger id="track-level">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {COMPETENCE_LEVELS.map((lv) => (
+                        <SelectItem key={lv} value={lv}>
+                          {formatCompetenceLevel(lv)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="track-cat">Kategorie</Label>
+                  <Select
+                    value={trackForm.category}
+                    onValueChange={(v) =>
+                      setTrackForm((prev) =>
+                        prev ? { ...prev, category: v as TrackCategory } : prev
+                      )
+                    }
+                  >
+                    <SelectTrigger id="track-cat">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {TRACK_CATEGORIES.map((c) => (
+                        <SelectItem key={c} value={c}>
+                          {formatTrackCategory(c)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="track-brole">BusinessRole</Label>
+                <Select
+                  value={trackForm.businessRole}
+                  onValueChange={(v) =>
+                    setTrackForm((prev) =>
+                      prev
+                        ? {
+                            ...prev,
+                            businessRole: v as BusinessRole | "__none__",
+                          }
+                        : prev
+                    )
+                  }
+                >
+                  <SelectTrigger id="track-brole">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">— rollenuebergreifend —</SelectItem>
+                    {BUSINESS_ROLES.map((r) => (
+                      <SelectItem key={r} value={r}>
+                        {formatBusinessRole(r)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setEditingTrackId(null)
+                setTrackForm(null)
+              }}
+              disabled={trackSaving}
+            >
+              Abbrechen
+            </Button>
+            <Button onClick={handleSaveTrack} disabled={trackSaving}>
+              <Save className="h-4 w-4 mr-2" />
+              {trackSaving ? "Speichern..." : "Speichern"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

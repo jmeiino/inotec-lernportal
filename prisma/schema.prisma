@@ -12,6 +12,32 @@ enum Role {
   LEARNER
   TRAINER
   ADMIN
+  MULTIPLICATOR
+  CHAMPION
+}
+
+enum CompetenceLevel {
+  L1
+  L2
+  L3
+  L4
+  F1
+  F2
+  F3
+}
+
+enum TrackCategory {
+  FACH
+  FUEHRUNG
+}
+
+enum BusinessRole {
+  VERTRIEB
+  PRODUKTION
+  VERWALTUNG
+  IT
+  HR
+  FUEHRUNG
 }
 
 enum EnrollmentStatus {
@@ -47,14 +73,15 @@ enum ModuleFormat {
 }
 
 model User {
-  id         String   @id @default(uuid())
-  name       String
-  email      String   @unique
-  image      String?
-  role       Role     @default(LEARNER)
-  department String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id           String        @id @default(uuid())
+  name         String
+  email        String        @unique
+  image        String?
+  role         Role          @default(LEARNER)
+  department   String?
+  businessRole BusinessRole?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
 
   enrollments      Enrollment[]
   progress         ModuleProgress[]
@@ -103,13 +130,15 @@ model VerificationToken {
 }
 
 model Track {
-  id          String   @id @default(uuid())
-  name        String
-  description String?  @db.Text
-  level       String
-  sortOrder   Int
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id              String          @id @default(uuid())
+  name            String
+  description     String?         @db.Text
+  competenceLevel CompetenceLevel
+  category        TrackCategory   @default(FACH)
+  businessRole    BusinessRole?
+  sortOrder       Int
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
 
   modules      Module[]
   enrollments  Enrollment[]

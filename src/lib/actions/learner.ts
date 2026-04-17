@@ -102,7 +102,8 @@ export async function getDashboardData(userId: string) {
         enrollmentId: enrollment.id,
         trackId: enrollment.track.id,
         trackName: enrollment.track.name,
-        trackLevel: enrollment.track.level,
+        competenceLevel: enrollment.track.competenceLevel,
+        category: enrollment.track.category,
         status: enrollment.status,
         totalModules,
         completedModules,
@@ -130,7 +131,7 @@ export async function getDashboardData(userId: string) {
       id: cert.id,
       certNumber: cert.certNumber,
       trackName: cert.track.name,
-      trackLevel: cert.track.level,
+      competenceLevel: cert.track.competenceLevel,
       issuedAt: cert.issuedAt,
     }))
 

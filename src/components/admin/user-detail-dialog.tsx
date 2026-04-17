@@ -29,10 +29,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   getUserDetail,
   updateUserRole,
+  updateUserBusinessRole,
   enrollUserInTrack,
   removeUserFromTrack,
 } from "@/lib/actions/admin"
-import type { Role } from "@prisma/client"
+import type { Role, BusinessRole } from "@prisma/client"
+import { formatBusinessRole } from "@/lib/utils"
 
 interface UserDetailDialogProps {
   userId: string | null
@@ -48,7 +50,18 @@ const roleLabels: Record<string, string> = {
   LEARNER: "Lernende/r",
   TRAINER: "Trainer/in",
   ADMIN: "Administrator/in",
+  MULTIPLICATOR: "Multiplikator/in",
+  CHAMPION: "Champion",
 }
+
+const BUSINESS_ROLES: BusinessRole[] = [
+  "VERTRIEB",
+  "PRODUKTION",
+  "VERWALTUNG",
+  "IT",
+  "HR",
+  "FUEHRUNG",
+]
 
 export function UserDetailDialog({
   userId,
@@ -77,6 +90,20 @@ export function UserDetailDialog({
     setActionLoading(true)
     try {
       await updateUserRole(userId, role as Role)
+      const updated = await getUserDetail(userId)
+      setUser(updated)
+      onUpdated()
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  async function handleBusinessRoleChange(value: string) {
+    if (!userId) return
+    setActionLoading(true)
+    try {
+      const next = value === "__none__" ? null : (value as BusinessRole)
+      await updateUserBusinessRole(userId, next)
       const updated = await getUserDetail(userId)
       setUser(updated)
       onUpdated()
@@ -158,6 +185,28 @@ export function UserDetailDialog({
                     <SelectItem value="LEARNER">Lernende/r</SelectItem>
                     <SelectItem value="TRAINER">Trainer/in</SelectItem>
                     <SelectItem value="ADMIN">Administrator/in</SelectItem>
+                    <SelectItem value="MULTIPLICATOR">Multiplikator/in</SelectItem>
+                    <SelectItem value="CHAMPION">Champion</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground">BusinessRole:</span>
+                <Select
+                  value={user.businessRole ?? "__none__"}
+                  onValueChange={handleBusinessRoleChange}
+                  disabled={actionLoading}
+                >
+                  <SelectTrigger className="w-48 h-8">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">— nicht gesetzt —</SelectItem>
+                    {BUSINESS_ROLES.map((r) => (
+                      <SelectItem key={r} value={r}>
+                        {formatBusinessRole(r)}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>

@@ -24,6 +24,7 @@ import { Progress } from "@/components/ui/progress"
 import { Separator } from "@/components/ui/separator"
 import { CommentSection } from "@/components/comments/comment-section"
 import { ScheduleList } from "@/components/schedule/schedule-list"
+import { formatCompetenceLevel } from "@/lib/utils"
 
 const formatLabels: Record<string, { label: string; icon: typeof Monitor }> = {
   ONLINE: { label: "Online", icon: Monitor },
@@ -79,7 +80,7 @@ export default async function ModuleDetailPage({
           <div className="space-y-2">
             <div className="flex items-center gap-2 flex-wrap">
               <Badge variant="outline">{mod.code}</Badge>
-              <Badge variant="secondary">{mod.track.level}</Badge>
+              <Badge variant="secondary">{formatCompetenceLevel(mod.track.competenceLevel)}</Badge>
               <Badge variant="secondary" className="gap-1">
                 <FormatIcon className="h-3 w-3" />
                 {formatInfo.label}

@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/prisma"
 import { requireTrainer, requireAdmin } from "@/lib/auth-guard"
-import type { Role } from "@prisma/client"
+import type { Role, BusinessRole } from "@prisma/client"
 
 export async function getAdminDashboard() {
   await requireTrainer()
@@ -218,6 +218,7 @@ export async function getAdminUsers(filters: UserFilters = {}) {
       name: true,
       email: true,
       department: true,
+      businessRole: true,
       role: true,
       createdAt: true,
       enrollments: {
@@ -255,6 +256,7 @@ export async function getAdminUsers(filters: UserFilters = {}) {
       name: u.name,
       email: u.email,
       department: u.department,
+      businessRole: u.businessRole,
       role: u.role,
       enrollmentCount: u.enrollments.length,
       progress: avgProgress,
@@ -334,6 +336,7 @@ export async function getUserDetail(userId: string) {
     name: user.name,
     email: user.email,
     department: user.department,
+    businessRole: user.businessRole,
     role: user.role,
     createdAt: user.createdAt.toISOString(),
     enrollments: user.enrollments.map((e) => ({
@@ -373,6 +376,20 @@ export async function updateUserRole(userId: string, role: Role) {
   return { success: true }
 }
 
+export async function updateUserBusinessRole(
+  userId: string,
+  businessRole: BusinessRole | null
+) {
+  await requireAdmin()
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: { businessRole },
+  })
+
+  return { success: true }
+}
+
 export async function enrollUserInTrack(userId: string, trackId: string) {
   await requireAdmin()
 
@@ -398,12 +415,13 @@ export async function exportUsersCSV(filters: UserFilters = {}) {
 
   const users = await getAdminUsers(filters)
 
-  const header = "Name,Email,Abteilung,Rolle,Einschreibungen,Fortschritt %,Abgeschlossene Module,Letzte Aktivität"
+  const header = "Name,Email,Abteilung,BusinessRole,Rolle,Einschreibungen,Fortschritt %,Abgeschlossene Module,Letzte Aktivität"
   const rows = users.map((u) =>
     [
       `"${u.name}"`,
       `"${u.email}"`,
       `"${u.department || ""}"`,
+      u.businessRole || "",
       u.role,
       u.enrollmentCount,
       u.progress,

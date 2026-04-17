@@ -19,6 +19,8 @@ import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { enrollInTrack } from "@/lib/actions/catalog"
 import { toast } from "@/hooks/use-toast"
+import { formatCompetenceLevel, formatBusinessRole, formatTrackCategory } from "@/lib/utils"
+import type { CompetenceLevel, BusinessRole, TrackCategory } from "@prisma/client"
 
 interface ModuleData {
   id: string
@@ -36,7 +38,9 @@ interface TrackData {
   id: string
   name: string
   description: string | null
-  level: string
+  competenceLevel: CompetenceLevel
+  category: TrackCategory
+  businessRole: BusinessRole | null
   enrollmentStatus: string | null
   totalModules: number
   completedModules: number
@@ -124,9 +128,13 @@ function TrackSection({
       <CardHeader>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="space-y-1">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <CardTitle className="text-lg">{track.name}</CardTitle>
-              <Badge variant="secondary">{track.level}</Badge>
+              <Badge variant="secondary">{formatCompetenceLevel(track.competenceLevel)}</Badge>
+              <Badge variant="outline">{formatTrackCategory(track.category)}</Badge>
+              {track.businessRole && (
+                <Badge variant="outline">{formatBusinessRole(track.businessRole)}</Badge>
+              )}
             </div>
             {track.description && (
               <p className="text-sm text-muted-foreground">

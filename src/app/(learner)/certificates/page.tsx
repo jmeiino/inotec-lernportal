@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Award, FileDown, Calendar } from "lucide-react"
 import Link from "next/link"
+import { formatCompetenceLevel } from "@/lib/utils"
 
 export default async function CertificatesPage() {
   const session = await requireAuth()
@@ -58,7 +59,7 @@ export default async function CertificatesPage() {
                           {cert.trackName}
                         </CardTitle>
                         <Badge variant="secondary" className="mt-1">
-                          {cert.trackLevel}
+                          {formatCompetenceLevel(cert.competenceLevel)}
                         </Badge>
                       </div>
                     </div>

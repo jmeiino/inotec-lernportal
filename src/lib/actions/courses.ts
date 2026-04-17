@@ -2,7 +2,12 @@
 
 import { prisma } from "@/lib/prisma"
 import { requireTrainer } from "@/lib/auth-guard"
-import type { ModuleFormat } from "@prisma/client"
+import type {
+  ModuleFormat,
+  CompetenceLevel,
+  TrackCategory,
+  BusinessRole,
+} from "@prisma/client"
 
 export async function getCoursesTree() {
   await requireTrainer()
@@ -180,6 +185,32 @@ export async function deleteMaterial(materialId: string) {
 
   await prisma.material.delete({
     where: { id: materialId },
+  })
+
+  return { success: true }
+}
+
+export async function updateTrack(
+  trackId: string,
+  data: {
+    name: string
+    description: string | null
+    competenceLevel: CompetenceLevel
+    category: TrackCategory
+    businessRole: BusinessRole | null
+  }
+) {
+  await requireTrainer()
+
+  await prisma.track.update({
+    where: { id: trackId },
+    data: {
+      name: data.name,
+      description: data.description,
+      competenceLevel: data.competenceLevel,
+      category: data.category,
+      businessRole: data.businessRole,
+    },
   })
 
   return { success: true }

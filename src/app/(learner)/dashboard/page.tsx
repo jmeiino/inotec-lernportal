@@ -19,6 +19,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
+import { formatCompetenceLevel } from "@/lib/utils"
 
 export default async function DashboardPage() {
   const session = await requireAuth()
@@ -134,7 +135,7 @@ export default async function DashboardPage() {
                         track.status === "COMPLETED" ? "success" : "secondary"
                       }
                     >
-                      {track.trackLevel}
+                      {formatCompetenceLevel(track.competenceLevel)}
                     </Badge>
                   </div>
                 </CardHeader>
@@ -246,7 +247,7 @@ export default async function DashboardPage() {
                       <span className="font-medium text-sm">
                         {cert.trackName}
                       </span>
-                      <Badge variant="secondary">{cert.trackLevel}</Badge>
+                      <Badge variant="secondary">{formatCompetenceLevel(cert.competenceLevel)}</Badge>
                     </div>
                     <p className="text-xs text-muted-foreground">
                       {cert.certNumber} &middot;{" "}

@@ -22,6 +22,7 @@ import {
 import { UserDetailDialog } from "@/components/admin/user-detail-dialog"
 import { getAdminUsers, exportUsersCSV, type UserFilters } from "@/lib/actions/admin"
 import { Download, Search } from "lucide-react"
+import { formatBusinessRole } from "@/lib/utils"
 
 type UserRow = Awaited<ReturnType<typeof getAdminUsers>>[number]
 
@@ -35,6 +36,8 @@ const roleLabels: Record<string, string> = {
   LEARNER: "Lernende/r",
   TRAINER: "Trainer/in",
   ADMIN: "Admin",
+  MULTIPLICATOR: "Multiplikator/in",
+  CHAMPION: "Champion",
 }
 
 export function UsersClient({ initialUsers, departments, tracks }: UsersClientProps) {
@@ -130,6 +133,8 @@ export function UsersClient({ initialUsers, departments, tracks }: UsersClientPr
             <SelectItem value="LEARNER">Lernende/r</SelectItem>
             <SelectItem value="TRAINER">Trainer/in</SelectItem>
             <SelectItem value="ADMIN">Admin</SelectItem>
+            <SelectItem value="MULTIPLICATOR">Multiplikator/in</SelectItem>
+            <SelectItem value="CHAMPION">Champion</SelectItem>
           </SelectContent>
         </Select>
         <Button onClick={handleSearch} disabled={isPending}>
@@ -150,6 +155,7 @@ export function UsersClient({ initialUsers, departments, tracks }: UsersClientPr
               <TableHead>Name</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Abteilung</TableHead>
+              <TableHead>BusinessRole</TableHead>
               <TableHead>Rolle</TableHead>
               <TableHead className="text-center">Eingeschrieben</TableHead>
               <TableHead>Fortschritt</TableHead>
@@ -159,7 +165,7 @@ export function UsersClient({ initialUsers, departments, tracks }: UsersClientPr
           <TableBody>
             {users.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                   Keine Nutzer gefunden.
                 </TableCell>
               </TableRow>
@@ -173,6 +179,7 @@ export function UsersClient({ initialUsers, departments, tracks }: UsersClientPr
                   <TableCell className="font-medium">{u.name}</TableCell>
                   <TableCell>{u.email}</TableCell>
                   <TableCell>{u.department || "-"}</TableCell>
+                  <TableCell>{formatBusinessRole(u.businessRole)}</TableCell>
                   <TableCell>
                     <Badge variant={u.role === "ADMIN" ? "default" : u.role === "TRAINER" ? "secondary" : "outline"}>
                       {roleLabels[u.role] || u.role}

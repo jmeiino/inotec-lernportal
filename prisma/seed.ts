@@ -1,4 +1,14 @@
-import { PrismaClient, Role, EnrollmentStatus, ModuleStatus, ModuleFormat, QuestionType } from "@prisma/client";
+import {
+  PrismaClient,
+  Role,
+  EnrollmentStatus,
+  ModuleStatus,
+  ModuleFormat,
+  QuestionType,
+  CompetenceLevel,
+  TrackCategory,
+  BusinessRole,
+} from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -19,21 +29,27 @@ const tracksData = [
     name: "KI-Grundlagen",
     description:
       "Grundlegende Kenntnisse rund um Kuenstliche Intelligenz fuer alle Mitarbeitenden. Der Track vermittelt ein solides Basiswissen ueber KI-Technologien, deren Anwendung im Arbeitsalltag sowie ethische und datenschutzrechtliche Aspekte.",
-    level: "Basis",
+    competenceLevel: CompetenceLevel.L1,
+    category: TrackCategory.FACH,
+    businessRole: null as BusinessRole | null,
     sortOrder: 1,
   },
   {
     name: "KI-Fuehrungskompetenz",
     description:
       "Vertiefende Inhalte fuer Fuehrungskraefte zur strategischen Integration von KI in Geschaeftsprozesse. Themen umfassen KI-Strategie, Projektmanagement, Daten-Governance und Change Management.",
-    level: "Fortgeschritten",
+    competenceLevel: CompetenceLevel.F2,
+    category: TrackCategory.FUEHRUNG,
+    businessRole: BusinessRole.FUEHRUNG,
     sortOrder: 2,
   },
   {
     name: "KI-Developer",
     description:
       "Technischer Track fuer IT-Fachkraefte und Entwickler. Behandelt Machine Learning, API-Integration, RAG-Architekturen und sichere KI-Deployments.",
-    level: "Experte",
+    competenceLevel: CompetenceLevel.L3,
+    category: TrackCategory.FACH,
+    businessRole: BusinessRole.IT,
     sortOrder: 3,
   },
 ];
@@ -2921,11 +2937,11 @@ const quizzesByModule: Record<string, QuestionDef[]> = {
 // ---------------------------------------------------------------------------
 
 const usersData = [
-  { name: "Jonas Meisterjahn", email: "admin@inotec.local", role: Role.ADMIN, department: "IT" },
-  { name: "Maria Schmidt", email: "maria.schmidt@inotec.local", role: Role.TRAINER, department: "HR" },
-  { name: "Thomas Mueller", email: "thomas.mueller@inotec.local", role: Role.LEARNER, department: "Vertrieb" },
-  { name: "Lisa Weber", email: "lisa.weber@inotec.local", role: Role.LEARNER, department: "Produktion" },
-  { name: "Stefan Braun", email: "stefan.braun@inotec.local", role: Role.LEARNER, department: "IT" },
+  { name: "Jonas Meisterjahn", email: "admin@inotec.local", role: Role.ADMIN, department: "IT", businessRole: BusinessRole.IT },
+  { name: "Maria Schmidt", email: "maria.schmidt@inotec.local", role: Role.TRAINER, department: "HR", businessRole: BusinessRole.HR },
+  { name: "Thomas Mueller", email: "thomas.mueller@inotec.local", role: Role.LEARNER, department: "Vertrieb", businessRole: BusinessRole.VERTRIEB },
+  { name: "Lisa Weber", email: "lisa.weber@inotec.local", role: Role.LEARNER, department: "Produktion", businessRole: BusinessRole.PRODUKTION },
+  { name: "Stefan Braun", email: "stefan.braun@inotec.local", role: Role.LEARNER, department: "IT", businessRole: BusinessRole.IT },
 ];
 
 // ---------------------------------------------------------------------------
