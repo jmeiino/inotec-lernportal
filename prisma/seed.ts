@@ -3345,6 +3345,60 @@ async function main() {
   });
   log("  ✔ 4 comments created");
 
+  // ----- Surveys -----
+  log("Creating baseline survey...");
+  const baselineSurveyId = "survey-baseline-2026";
+  await prisma.survey.upsert({
+    where: { id: baselineSurveyId },
+    update: {},
+    create: {
+      id: baselineSurveyId,
+      type: "SELF_ASSESSMENT",
+      title: "KI-Kompetenz Baseline 2026",
+      description:
+        "Kurze Selbsteinschaetzung Ihrer aktuellen KI-Kompetenz. Die Auswertung erfolgt anonym auf Abteilungsebene.",
+      active: true,
+      salt: "seed-baseline-salt",
+      questions: {
+        create: [
+          {
+            id: "q-baseline-level",
+            prompt:
+              "Auf welcher Stufe sehen Sie sich selbst aktuell im Bereich KI?",
+            type: "LEVEL_SELF",
+            options: [],
+            sortOrder: 1,
+          },
+          {
+            id: "q-baseline-confidence",
+            prompt:
+              "Wie sicher fuehlen Sie sich beim Einsatz von KI im Arbeitsalltag? (1 = gar nicht, 5 = sehr sicher)",
+            type: "LIKERT_5",
+            options: [],
+            sortOrder: 2,
+          },
+          {
+            id: "q-baseline-usage",
+            prompt:
+              "Wie haeufig nutzen Sie KI-Werkzeuge aktuell? (1 = nie, 5 = taeglich)",
+            type: "LIKERT_5",
+            options: [],
+            sortOrder: 3,
+          },
+          {
+            id: "q-baseline-hurdle",
+            prompt:
+              "Was haelt Sie heute davon ab, KI staerker einzusetzen? (Freitext)",
+            type: "OPEN_TEXT",
+            options: [],
+            sortOrder: 4,
+          },
+        ],
+      },
+    },
+  });
+  log("  ✔ 1 baseline survey created");
+
   console.log("\n=== Seed completed successfully! ===\n");
 }
 

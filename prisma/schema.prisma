@@ -47,6 +47,20 @@ enum SubmissionStatus {
   REWORK
 }
 
+enum SurveyType {
+  BASELINE
+  PULSE
+  SELF_ASSESSMENT
+  ANNUAL
+}
+
+enum SurveyQuestionType {
+  LIKERT_5
+  OPEN_TEXT
+  LEVEL_SELF
+  MULTIPLE_CHOICE
+}
+
 enum EnrollmentStatus {
   ACTIVE
   COMPLETED
@@ -327,6 +341,69 @@ model Schedule {
   trainer User   @relation("TrainerSchedules", fields: [trainerId], references: [id])
 
   registrations ScheduleRegistration[]
+}
+
+model Survey {
+  id          String     @id @default(uuid())
+  type        SurveyType
+  title       String
+  description String?    @db.Text
+  active      Boolean    @default(true)
+  salt        String
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  questions SurveyQuestion[]
+  responses SurveyResponse[]
+
+  @@index([type])
+  @@index([active])
+}
+
+model SurveyQuestion {
+  id              String             @id @default(uuid())
+  surveyId        String
+  prompt          String             @db.Text
+  type            SurveyQuestionType
+  options         Json               @default("[]")
+  competenceLevel CompetenceLevel?
+  sortOrder       Int
+
+  survey  Survey         @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+  answers SurveyAnswer[]
+
+  @@index([surveyId])
+}
+
+model SurveyResponse {
+  id              String           @id @default(uuid())
+  surveyId        String
+  responseHash    String
+  department      String?
+  businessRole    BusinessRole?
+  competenceLevel CompetenceLevel?
+  submittedAt     DateTime         @default(now())
+
+  survey  Survey         @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+  answers SurveyAnswer[]
+
+  @@unique([surveyId, responseHash])
+  @@index([surveyId])
+  @@index([department])
+  @@index([businessRole])
+}
+
+model SurveyAnswer {
+  id         String @id @default(uuid())
+  responseId String
+  questionId String
+  value      String @db.Text
+
+  response SurveyResponse @relation(fields: [responseId], references: [id], onDelete: Cascade)
+  question SurveyQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([responseId])
+  @@index([questionId])
 }
 
 model WorkProductSubmission {

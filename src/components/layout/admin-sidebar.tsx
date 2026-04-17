@@ -10,6 +10,8 @@ import {
   ClipboardList,
   ClipboardCheck,
   Calendar,
+  Grid3x3,
+  MessageSquare,
   ArrowLeft,
   Menu,
 } from "lucide-react"
@@ -37,6 +39,8 @@ const navItems: NavItem[] = [
   { href: "/admin/courses", label: "Kurs-Editor", icon: BookOpen, allowed: ["ADMIN", "TRAINER"] },
   { href: "/admin/quizzes", label: "Quiz-Editor", icon: ClipboardList, allowed: ["ADMIN", "TRAINER"] },
   { href: "/admin/review", label: "Review-Queue", icon: ClipboardCheck, allowed: ["ADMIN", "TRAINER", "MULTIPLICATOR", "CHAMPION"] },
+  { href: "/admin/surveys", label: "Umfragen", icon: MessageSquare, allowed: ["ADMIN"] },
+  { href: "/admin/heatmap", label: "Heatmap", icon: Grid3x3, allowed: ["ADMIN", "TRAINER", "MULTIPLICATOR", "CHAMPION"] },
   { href: "/admin/calendar", label: "Kalender", icon: Calendar, allowed: ["ADMIN", "TRAINER"] },
 ]
 

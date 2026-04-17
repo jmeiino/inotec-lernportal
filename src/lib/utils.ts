@@ -5,6 +5,8 @@ import type {
   BusinessRole,
   TrackCategory,
   SubmissionStatus,
+  SurveyType,
+  SurveyQuestionType,
 } from "@prisma/client"
 
 export function cn(...inputs: ClassValue[]) {
@@ -77,4 +79,26 @@ export function submissionStatusVariant(
 
 export function requiresWorkProduct(level: CompetenceLevel): boolean {
   return level === "L2" || level === "L3" || level === "L4"
+}
+
+const SURVEY_TYPE_LABEL: Record<SurveyType, string> = {
+  BASELINE: "Baseline",
+  PULSE: "Puls",
+  SELF_ASSESSMENT: "Selbsteinschaetzung",
+  ANNUAL: "Jahresumfrage",
+}
+
+export function formatSurveyType(type: SurveyType): string {
+  return SURVEY_TYPE_LABEL[type] ?? type
+}
+
+const SURVEY_QUESTION_TYPE_LABEL: Record<SurveyQuestionType, string> = {
+  LIKERT_5: "Likert (1-5)",
+  OPEN_TEXT: "Freitext",
+  LEVEL_SELF: "Kompetenz-Stufe",
+  MULTIPLE_CHOICE: "Auswahl",
+}
+
+export function formatSurveyQuestionType(type: SurveyQuestionType): string {
+  return SURVEY_QUESTION_TYPE_LABEL[type] ?? type
 }
