@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { formatCompetenceLevel } from "@/lib/utils"
+import { PyramidView } from "@/components/layout/pyramid-view"
 
 export default async function DashboardPage() {
   const session = await requireAuth()
@@ -78,6 +79,20 @@ export default async function DashboardPage() {
             </div>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Kompetenz-Pyramiden */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <PyramidView
+          data={data.fachPyramid}
+          title="Fach-Pyramide"
+          description="L1 Basis bis L4 Champion. Pflicht fuer alle Mitarbeitenden auf L1 und L2."
+        />
+        <PyramidView
+          data={data.fuehrungPyramid}
+          title="Fuehrungs-Pyramide"
+          description="F1 Sensibilisierung bis F3 GF-Dialog. Paralleler Track fuer Fuehrungskraefte."
+        />
       </div>
 
       {/* Continue Learning */}
