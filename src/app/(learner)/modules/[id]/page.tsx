@@ -114,6 +114,27 @@ export default async function ModuleDetailPage({
         </div>
       </div>
 
+      {/* Arbeitsprodukt ausstehend */}
+      {mod.workProductPending && (
+        <Card className="border-blue-500/50 bg-blue-50 dark:bg-blue-950/20">
+          <CardContent className="p-4">
+            <div className="flex items-start gap-3">
+              <ClipboardCheck className="h-5 w-5 text-blue-500 shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <p className="font-medium text-sm">
+                  Arbeitsprodukt noch ausstehend
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Alle Lektionen sind abgeschlossen. Das Modul gilt als
+                  beendet, sobald ein Multiplikator Ihr eingereichtes
+                  Arbeitsprodukt freigegeben hat.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Prerequisites Warning */}
       {!mod.prerequisitesMet && mod.prerequisiteModules.length > 0 && (
         <Card className="border-amber-500/50 bg-amber-50 dark:bg-amber-950/20">

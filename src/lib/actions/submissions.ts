@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { requireAuth, requireReviewer } from "@/lib/auth-guard"
 import { revalidatePath } from "next/cache"
 import { SubmissionStatus } from "@prisma/client"
+import { recalculateModuleProgress } from "@/lib/actions/modules"
 
 const REVIEWER_ROLES = ["ADMIN", "TRAINER", "MULTIPLICATOR", "CHAMPION"] as const
 
@@ -249,7 +250,7 @@ export async function approveSubmission(submissionId: string, notes?: string) {
 
   const existing = await prisma.workProductSubmission.findUnique({
     where: { id: submissionId },
-    select: { status: true, moduleId: true },
+    select: { status: true, moduleId: true, userId: true },
   })
   if (!existing) return { success: false, error: "Einreichung nicht gefunden." }
   if (existing.status === SubmissionStatus.APPROVED) {
@@ -266,8 +267,12 @@ export async function approveSubmission(submissionId: string, notes?: string) {
     },
   })
 
+  // Neu berechnen, ob das Modul damit voll abgeschlossen ist
+  await recalculateModuleProgress(existing.userId, existing.moduleId)
+
   revalidatePath("/review")
   revalidatePath(`/modules/${existing.moduleId}`)
+  revalidatePath("/dashboard")
   return { success: true }
 }
 

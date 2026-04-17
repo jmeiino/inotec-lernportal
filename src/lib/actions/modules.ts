@@ -2,6 +2,86 @@
 
 import { prisma } from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
+import { SubmissionStatus } from "@prisma/client"
+import { requiresWorkProduct } from "@/lib/utils"
+
+export async function recalculateModuleProgress(
+  userId: string,
+  moduleId: string
+) {
+  const mod = await prisma.module.findUnique({
+    where: { id: moduleId },
+    select: {
+      id: true,
+      track: { select: { competenceLevel: true } },
+      lessons: { select: { id: true } },
+    },
+  })
+  if (!mod) return null
+
+  const totalLessons = mod.lessons.length
+  const completedLessonCount = await prisma.lessonProgress.count({
+    where: {
+      userId,
+      completed: true,
+      lesson: { moduleId },
+    },
+  })
+  const lessonsDone = totalLessons > 0 && completedLessonCount === totalLessons
+
+  const wpRequired = requiresWorkProduct(mod.track.competenceLevel)
+  let wpApproved = true
+  if (wpRequired) {
+    const approved = await prisma.workProductSubmission.count({
+      where: { userId, moduleId, status: SubmissionStatus.APPROVED },
+    })
+    wpApproved = approved > 0
+  }
+
+  const lessonRatio =
+    totalLessons > 0
+      ? Math.round((completedLessonCount / totalLessons) * 100)
+      : 0
+
+  // Progress layers: Lessons up to 90 %, final 10 % is the approved work product.
+  let progressPct = lessonRatio
+  if (wpRequired) {
+    progressPct = Math.min(lessonRatio, 90)
+    if (wpApproved) progressPct = 100
+  }
+
+  const isCompleted = lessonsDone && wpApproved
+  const existing = await prisma.moduleProgress.findUnique({
+    where: { userId_moduleId: { userId, moduleId } },
+    select: { status: true },
+  })
+  const hadStarted = !!existing || completedLessonCount > 0
+
+  const status =
+    isCompleted
+      ? "COMPLETED"
+      : hadStarted
+        ? "IN_PROGRESS"
+        : "NOT_STARTED"
+
+  await prisma.moduleProgress.upsert({
+    where: { userId_moduleId: { userId, moduleId } },
+    update: {
+      progressPct,
+      status,
+      completedAt: isCompleted ? new Date() : null,
+    },
+    create: {
+      userId,
+      moduleId,
+      progressPct,
+      status,
+      completedAt: isCompleted ? new Date() : null,
+    },
+  })
+
+  return { progressPct, status, lessonsDone, wpRequired, wpApproved }
+}
 
 export async function getModuleDetail(moduleId: string, userId: string) {
   try {
@@ -73,6 +153,20 @@ export async function getModuleDetail(moduleId: string, userId: string) {
     ).length
     const allLessonsCompleted = totalLessons > 0 && completedLessons === totalLessons
 
+    const workProductRequired = requiresWorkProduct(mod.track.competenceLevel)
+    const approvedWorkProducts = workProductRequired
+      ? await prisma.workProductSubmission.count({
+          where: {
+            userId,
+            moduleId,
+            status: SubmissionStatus.APPROVED,
+          },
+        })
+      : 0
+    const hasApprovedWorkProduct = approvedWorkProducts > 0
+    const workProductPending =
+      workProductRequired && allLessonsCompleted && !hasApprovedWorkProduct
+
     return {
       id: mod.id,
       code: mod.code,
@@ -103,6 +197,9 @@ export async function getModuleDetail(moduleId: string, userId: string) {
       allLessonsCompleted,
       prerequisitesMet,
       prerequisiteModules,
+      workProductRequired,
+      hasApprovedWorkProduct,
+      workProductPending,
     }
   } catch (error) {
     console.error("Error fetching module detail:", error)
@@ -166,59 +263,30 @@ export async function getLesson(lessonId: string, userId: string) {
 
 export async function markLessonComplete(userId: string, lessonId: string) {
   try {
-    // Upsert lesson progress
     await prisma.lessonProgress.upsert({
       where: { userId_lessonId: { userId, lessonId } },
       update: { completed: true, completedAt: new Date() },
       create: { userId, lessonId, completed: true, completedAt: new Date() },
     })
 
-    // Get the lesson's module to recalculate progress
     const lesson = await prisma.lesson.findUnique({
       where: { id: lessonId },
       select: { moduleId: true },
     })
-
     if (!lesson) return { success: false, error: "Lektion nicht gefunden" }
 
-    // Calculate module progress
-    const totalLessons = await prisma.lesson.count({
-      where: { moduleId: lesson.moduleId },
-    })
-
-    const completedLessons = await prisma.lessonProgress.count({
-      where: {
-        userId,
-        completed: true,
-        lesson: { moduleId: lesson.moduleId },
-      },
-    })
-
-    const progressPct =
-      totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0
-    const isCompleted = completedLessons === totalLessons
-
-    // Upsert module progress
-    await prisma.moduleProgress.upsert({
-      where: { userId_moduleId: { userId, moduleId: lesson.moduleId } },
-      update: {
-        progressPct,
-        status: isCompleted ? "COMPLETED" : "IN_PROGRESS",
-        completedAt: isCompleted ? new Date() : null,
-      },
-      create: {
-        userId,
-        moduleId: lesson.moduleId,
-        progressPct,
-        status: isCompleted ? "COMPLETED" : "IN_PROGRESS",
-        completedAt: isCompleted ? new Date() : null,
-      },
-    })
+    const result = await recalculateModuleProgress(userId, lesson.moduleId)
 
     revalidatePath(`/modules/${lesson.moduleId}`)
     revalidatePath("/dashboard")
 
-    return { success: true, progressPct, isCompleted }
+    return {
+      success: true,
+      progressPct: result?.progressPct ?? 0,
+      isCompleted: result?.status === "COMPLETED",
+      wpRequired: result?.wpRequired ?? false,
+      wpApproved: result?.wpApproved ?? false,
+    }
   } catch (error) {
     console.error("Error marking lesson complete:", error)
     return { success: false, error: "Fehler beim Aktualisieren" }
