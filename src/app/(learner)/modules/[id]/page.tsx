@@ -26,6 +26,8 @@ import { CommentSection } from "@/components/comments/comment-section"
 import { ScheduleList } from "@/components/schedule/schedule-list"
 import { SubmissionSection } from "@/components/submissions/submission-section"
 import { getMySubmissionsForModule } from "@/lib/actions/submissions"
+import { ModuleFeedback } from "@/components/feedback/module-feedback"
+import { getMyModuleFeedback } from "@/lib/actions/feedback"
 import { formatCompetenceLevel, requiresWorkProduct } from "@/lib/utils"
 
 const formatLabels: Record<string, { label: string; icon: typeof Monitor }> = {
@@ -63,6 +65,7 @@ export default async function ModuleDetailPage({
 
   const workProductRequired = requiresWorkProduct(mod.track.competenceLevel)
   const mySubmissions = await getMySubmissionsForModule(mod.id)
+  const myFeedback = await getMyModuleFeedback(mod.id)
 
   return (
     <div className="space-y-6">
@@ -275,6 +278,11 @@ export default async function ModuleDetailPage({
               required={workProductRequired}
               initialSubmissions={mySubmissions}
             />
+          )}
+
+          {/* Puls-Feedback nach Abschluss */}
+          {(mod.status === "COMPLETED" || myFeedback) && (
+            <ModuleFeedback moduleId={mod.id} existing={myFeedback} />
           )}
 
           {/* Comments */}

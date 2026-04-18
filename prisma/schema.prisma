@@ -67,6 +67,19 @@ enum Tool {
   OPENWEBUI
 }
 
+model ModuleFeedback {
+  id          String   @id @default(uuid())
+  userId      String
+  moduleId    String
+  relevance   Int
+  quality     Int
+  openText    String?  @db.Text
+  submittedAt DateTime @default(now())
+
+  @@unique([userId, moduleId])
+  @@index([moduleId])
+}
+
 enum EnrollmentStatus {
   ACTIVE
   COMPLETED
