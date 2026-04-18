@@ -3,7 +3,7 @@ import type { Adapter } from "next-auth/adapters"
 import { PrismaAdapter } from "@auth/prisma-adapter"
 import CredentialsProvider from "next-auth/providers/credentials"
 import { prisma } from "./prisma"
-import type { Role } from "@prisma/client"
+import type { BusinessRole, Role } from "@prisma/client"
 
 declare module "next-auth" {
   interface Session {
@@ -14,11 +14,13 @@ declare module "next-auth" {
       image?: string | null
       role: Role
       department?: string | null
+      businessRole?: BusinessRole | null
     }
   }
   interface User {
     role: Role
     department?: string | null
+    businessRole?: BusinessRole | null
   }
 }
 
@@ -72,16 +74,37 @@ if (process.env.NODE_ENV === "development" || !process.env.AZURE_AD_CLIENT_ID) {
   )
 }
 
+export const isAzureADEnabled = Boolean(process.env.AZURE_AD_CLIENT_ID)
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma) as Adapter,
   session: { strategy: "jwt" },
   providers,
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, account }) {
       if (user) {
+        token.id = user.id
         token.role = (user as any).role
         token.department = (user as any).department
-        token.id = user.id
+        token.businessRole = (user as any).businessRole
+      }
+      // Bei Azure-Login: Role/Department aus DB nachladen
+      if (account && account.provider === "azure-ad" && token.email) {
+        const dbUser = await prisma.user.findUnique({
+          where: { email: token.email as string },
+          select: {
+            id: true,
+            role: true,
+            department: true,
+            businessRole: true,
+          },
+        })
+        if (dbUser) {
+          token.id = dbUser.id
+          token.role = dbUser.role
+          token.department = dbUser.department
+          token.businessRole = dbUser.businessRole
+        }
       }
       return token
     },
@@ -90,6 +113,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.id = token.id as string
         session.user.role = token.role as Role
         session.user.department = token.department as string | null
+        session.user.businessRole = (token.businessRole ?? null) as
+          | BusinessRole
+          | null
       }
       return session
     },
