@@ -3,6 +3,143 @@
 import { prisma } from "@/lib/prisma"
 import { requireTrainer, requireAdmin } from "@/lib/auth-guard"
 import type { Role, BusinessRole } from "@prisma/client"
+import { SubmissionStatus, SurveyType, Tool } from "@prisma/client"
+
+export async function getExtendedKpis() {
+  await requireTrainer()
+
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+
+  const [
+    approvedRows,
+    openReviewerLoad,
+    activeSurveys,
+    responseCount,
+    totalUsers,
+    selfAssessmentResponses,
+    toolUsage,
+  ] = await Promise.all([
+    prisma.workProductSubmission.findMany({
+      where: { status: SubmissionStatus.APPROVED, reviewedAt: { not: null } },
+      select: { submittedAt: true, reviewedAt: true },
+      take: 200,
+      orderBy: { reviewedAt: "desc" },
+    }),
+    prisma.workProductSubmission.groupBy({
+      by: ["reviewerId"],
+      where: {
+        status: {
+          in: [SubmissionStatus.SUBMITTED, SubmissionStatus.IN_REVIEW],
+        },
+      },
+      _count: { _all: true },
+    }),
+    prisma.survey.count({ where: { active: true } }),
+    prisma.surveyResponse.count(),
+    prisma.user.count(),
+    prisma.surveyResponse.findMany({
+      where: {
+        survey: { type: SurveyType.SELF_ASSESSMENT },
+        department: { not: null },
+      },
+      select: {
+        department: true,
+        answers: {
+          select: {
+            value: true,
+            question: { select: { type: true } },
+          },
+        },
+      },
+    }),
+    prisma.toolUsageLog.findMany({
+      where: { occurredAt: { gte: thirtyDaysAgo } },
+      distinct: ["userId"],
+      select: { userId: true, user: { select: { department: true } } },
+    }),
+  ])
+
+  const approvedDurations = approvedRows
+    .filter((r) => r.reviewedAt)
+    .map(
+      (r) => (r.reviewedAt!.getTime() - r.submittedAt.getTime()) / (1000 * 60 * 60 * 24)
+    )
+  const avgDurationDays =
+    approvedDurations.length > 0
+      ? approvedDurations.reduce((s, v) => s + v, 0) / approvedDurations.length
+      : null
+
+  const reviewerLoad = openReviewerLoad
+    .filter((r) => r.reviewerId !== null)
+    .map((r) => ({ reviewerId: r.reviewerId as string, open: r._count._all }))
+
+  const totalOpen = reviewerLoad.reduce((s, r) => s + r.open, 0)
+
+  // Transferluecke: pro Abteilung mittlere Likert-Selbsteinschaetzung vs
+  // Anteil aktiver Tool-Nutzer
+  const deptSelf = new Map<string, { sum: number; count: number }>()
+  for (const r of selfAssessmentResponses) {
+    for (const a of r.answers) {
+      if (a.question.type === "LIKERT_5") {
+        const n = Number(a.value)
+        if (!Number.isNaN(n)) {
+          const d = r.department as string
+          const entry = deptSelf.get(d) ?? { sum: 0, count: 0 }
+          entry.sum += n
+          entry.count += 1
+          deptSelf.set(d, entry)
+        }
+      }
+    }
+  }
+  const deptUsers = new Map<string, Set<string>>()
+  const deptUsageUsers = new Map<string, Set<string>>()
+  for (const u of toolUsage) {
+    const dept = u.user.department ?? "—"
+    if (!deptUsageUsers.has(dept)) deptUsageUsers.set(dept, new Set())
+    deptUsageUsers.get(dept)!.add(u.userId)
+  }
+  const allUsersByDept = await prisma.user.findMany({
+    where: { department: { not: null } },
+    select: { id: true, department: true },
+  })
+  for (const u of allUsersByDept) {
+    const dept = u.department as string
+    if (!deptUsers.has(dept)) deptUsers.set(dept, new Set())
+    deptUsers.get(dept)!.add(u.id)
+  }
+
+  const transferGap: Array<{
+    department: string
+    avgSelf: number
+    usagePct: number
+    gap: number
+  }> = []
+  deptSelf.forEach((self, dept) => {
+    const avgSelf = self.count > 0 ? self.sum / self.count : 0
+    const users = deptUsers.get(dept)?.size ?? 0
+    const active = deptUsageUsers.get(dept)?.size ?? 0
+    const usagePct = users > 0 ? (active / users) * 100 : 0
+    const selfPct = avgSelf * 20
+    transferGap.push({
+      department: dept,
+      avgSelf,
+      usagePct,
+      gap: selfPct - usagePct,
+    })
+  })
+  transferGap.sort((a, b) => b.gap - a.gap)
+
+  return {
+    avgSubmissionDurationDays: avgDurationDays,
+    openSubmissions: totalOpen,
+    reviewerLoad,
+    activeSurveys,
+    responseCount,
+    responseRate: totalUsers > 0 ? (responseCount / totalUsers) * 100 : 0,
+    transferGap: transferGap.slice(0, 8),
+  }
+}
 
 export async function getAdminDashboard() {
   await requireTrainer()

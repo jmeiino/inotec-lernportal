@@ -1,5 +1,5 @@
 import { requireTrainer } from "@/lib/auth-guard"
-import { getAdminDashboard } from "@/lib/actions/admin"
+import { getAdminDashboard, getExtendedKpis } from "@/lib/actions/admin"
 import { KpiCard } from "@/components/admin/kpi-card"
 import { SimpleBarChart } from "@/components/admin/simple-bar-chart"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -17,11 +17,15 @@ import {
   UserCheck,
   TrendingUp,
   Target,
+  Clock,
+  MessageSquare,
+  Sparkles,
+  AlertTriangle,
 } from "lucide-react"
 
 export default async function AdminDashboardPage() {
   await requireTrainer()
-  const data = await getAdminDashboard()
+  const [data, kpis] = await Promise.all([getAdminDashboard(), getExtendedKpis()])
 
   return (
     <div className="space-y-6">
@@ -56,6 +60,94 @@ export default async function AdminDashboardPage() {
           icon={Target}
         />
       </div>
+
+      {/* Schulungssystem-KPIs */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <KpiCard
+          title="Ø Review-Durchlaufzeit"
+          value={
+            kpis.avgSubmissionDurationDays !== null
+              ? `${kpis.avgSubmissionDurationDays.toFixed(1)} Tage`
+              : "—"
+          }
+          icon={Clock}
+        />
+        <KpiCard
+          title="Offene Arbeitsprodukte"
+          value={kpis.openSubmissions}
+          icon={Sparkles}
+          subtitle={`${kpis.reviewerLoad.length} Reviewer aktiv`}
+        />
+        <KpiCard
+          title="Aktive Umfragen"
+          value={kpis.activeSurveys}
+          icon={MessageSquare}
+          subtitle={`${kpis.responseCount} Antworten`}
+        />
+        <KpiCard
+          title="Survey-Response-Rate"
+          value={`${kpis.responseRate.toFixed(0)}%`}
+          icon={TrendingUp}
+        />
+      </div>
+
+      {/* Transferluecke */}
+      {kpis.transferGap.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-amber-500" />
+              Transferluecke je Abteilung
+            </CardTitle>
+            <p className="text-xs text-muted-foreground mt-1">
+              Differenz zwischen Selbsteinschaetzung und tatsaechlicher
+              Tool-Nutzung (letzte 30 Tage). Hohe positive Werte weisen auf
+              Transferverluste hin.
+            </p>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Abteilung</TableHead>
+                  <TableHead className="text-right">Ø Selbst (Likert)</TableHead>
+                  <TableHead className="text-right">Tool-Nutzer-Quote</TableHead>
+                  <TableHead className="text-right">Luecke</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {kpis.transferGap.map((t) => (
+                  <TableRow key={t.department}>
+                    <TableCell className="font-medium">
+                      {t.department}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {t.avgSelf.toFixed(2)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {t.usagePct.toFixed(0)}%
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Badge
+                        variant={
+                          t.gap > 30
+                            ? "destructive"
+                            : t.gap > 10
+                              ? "default"
+                              : "secondary"
+                        }
+                      >
+                        {t.gap > 0 ? "+" : ""}
+                        {t.gap.toFixed(0)} PP
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Charts section */}
       <div className="grid gap-6 md:grid-cols-2">
