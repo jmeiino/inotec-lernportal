@@ -85,6 +85,20 @@ enum NotificationType {
   GENERIC
 }
 
+model RoleAssignment {
+  id           String   @id @default(uuid())
+  userId       String
+  role         Role
+  businessRole BusinessRole?
+  validFrom    DateTime @default(now())
+  validUntil   DateTime
+  approvedById String?
+  createdAt    DateTime @default(now())
+
+  @@index([userId])
+  @@index([validUntil])
+}
+
 model ImpactStory {
   id          String    @id @default(uuid())
   authorId    String
