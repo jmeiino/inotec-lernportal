@@ -5,6 +5,10 @@ import { requireAuth, requireReviewer } from "@/lib/auth-guard"
 import { revalidatePath } from "next/cache"
 import { SubmissionStatus } from "@prisma/client"
 import { recalculateModuleProgress } from "@/lib/actions/modules"
+import {
+  createNotification,
+  createNotificationForMany,
+} from "@/lib/actions/notifications"
 
 const REVIEWER_ROLES = ["ADMIN", "TRAINER", "MULTIPLICATOR", "CHAMPION"] as const
 
@@ -41,6 +45,23 @@ export async function createSubmission(data: {
       status: SubmissionStatus.SUBMITTED,
     },
   })
+
+  // Reviewer benachrichtigen (TRAINER/ADMIN/MULTIPLICATOR/CHAMPION)
+  const reviewers = await prisma.user.findMany({
+    where: {
+      role: { in: ["ADMIN", "TRAINER", "MULTIPLICATOR", "CHAMPION"] },
+    },
+    select: { id: true },
+  })
+  await createNotificationForMany(
+    reviewers.map((r) => r.id),
+    {
+      type: "WP_SUBMITTED",
+      title: "Neue Einreichung zu pruefen",
+      bodyMd: `${session.user.name} hat ein Arbeitsprodukt „${data.title.trim()}" eingereicht.`,
+      linkUrl: `/admin/review`,
+    }
+  )
 
   revalidatePath(`/modules/${data.moduleId}`)
   revalidatePath("/review")
@@ -273,6 +294,17 @@ export async function approveSubmission(submissionId: string, notes?: string) {
   // Neu berechnen, ob das Modul damit voll abgeschlossen ist
   await recalculateModuleProgress(existing.userId, existing.moduleId)
 
+  // Autor benachrichtigen
+  await createNotification({
+    userId: existing.userId,
+    type: "WP_APPROVED",
+    title: "Arbeitsprodukt freigegeben",
+    bodyMd: notes?.trim()
+      ? `Ihr Arbeitsprodukt wurde freigegeben. Anmerkung: ${notes.trim()}`
+      : "Ihr Arbeitsprodukt wurde freigegeben.",
+    linkUrl: `/modules/${existing.moduleId}`,
+  })
+
   revalidatePath("/review")
   revalidatePath(`/modules/${existing.moduleId}`)
   revalidatePath("/dashboard")
@@ -304,6 +336,20 @@ export async function requestRework(submissionId: string, notes: string) {
       reviewedAt: new Date(),
     },
   })
+
+  const author = await prisma.workProductSubmission.findUnique({
+    where: { id: submissionId },
+    select: { userId: true },
+  })
+  if (author) {
+    await createNotification({
+      userId: author.userId,
+      type: "WP_REWORK",
+      title: "Nacharbeit am Arbeitsprodukt angefordert",
+      bodyMd: `Reviewer-Notiz: ${notes.trim()}`,
+      linkUrl: `/modules/${existing.moduleId}`,
+    })
+  }
 
   revalidatePath("/review")
   revalidatePath(`/modules/${existing.moduleId}`)

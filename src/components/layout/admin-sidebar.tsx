@@ -26,6 +26,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet"
 import { UserMenu } from "./user-menu"
+import { NotificationBell } from "./notification-bell"
 
 type NavItem = {
   href: string
@@ -58,11 +59,14 @@ function SidebarContent({
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center gap-2 p-6 border-b">
-        <span className="text-xl font-bold text-primary">INOTEC</span>
-        <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">
-          Admin
-        </span>
+      <div className="flex items-center justify-between gap-2 p-6 border-b">
+        <div className="flex items-center gap-2">
+          <span className="text-xl font-bold text-primary">INOTEC</span>
+          <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">
+            Admin
+          </span>
+        </div>
+        <NotificationBell />
       </div>
 
       <nav className="flex-1 p-4 space-y-1">

@@ -22,6 +22,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet"
 import { UserMenu } from "./user-menu"
+import { NotificationBell } from "./notification-bell"
 
 const baseNavItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -50,9 +51,12 @@ function SidebarContent({
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center gap-2 p-6 border-b">
-        <span className="text-xl font-bold text-primary">INOTEC</span>
-        <span className="text-sm text-muted-foreground">Lernportal</span>
+      <div className="flex items-center justify-between gap-2 p-6 border-b">
+        <div className="flex items-center gap-2">
+          <span className="text-xl font-bold text-primary">INOTEC</span>
+          <span className="text-sm text-muted-foreground">Lernportal</span>
+        </div>
+        <NotificationBell />
       </div>
 
       <nav className="flex-1 p-4 space-y-1">

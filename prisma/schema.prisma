@@ -75,6 +75,31 @@ enum EventType {
   L3_COMMUNITY
 }
 
+enum NotificationType {
+  WP_SUBMITTED
+  WP_APPROVED
+  WP_REWORK
+  MULTIPLIER_RENEWAL_DUE
+  SURVEY_ACTIVE
+  EVENT_REGISTERED
+  GENERIC
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  type      NotificationType
+  title     String
+  bodyMd    String           @db.Text
+  linkUrl   String?
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  @@index([userId])
+  @@index([readAt])
+  @@index([createdAt])
+}
+
 model ModuleFeedback {
   id          String   @id @default(uuid())
   userId      String
