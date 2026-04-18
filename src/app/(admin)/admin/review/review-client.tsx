@@ -34,6 +34,8 @@ import {
   approveSubmission,
   requestRework,
 } from "@/lib/actions/submissions"
+import { publishSubmission, setSubmissionTags } from "@/lib/actions/showcase"
+import { Input } from "@/components/ui/input"
 import { toast } from "@/hooks/use-toast"
 import {
   formatCompetenceLevel,
@@ -57,6 +59,7 @@ export function ReviewQueueClient({ initialSubmissions }: ReviewQueueClientProps
   const [detail, setDetail] = useState<Detail>(null)
   const [detailLoading, setDetailLoading] = useState(false)
   const [notes, setNotes] = useState("")
+  const [tagsInput, setTagsInput] = useState("")
   const [isPending, startTransition] = useTransition()
 
   const refresh = useCallback(
@@ -76,9 +79,41 @@ export function ReviewQueueClient({ initialSubmissions }: ReviewQueueClientProps
       const data = await getSubmissionDetail(id)
       setDetail(data)
       setNotes(data?.reviewNotes ?? "")
+      setTagsInput((data?.tags ?? []).join(", "))
     } finally {
       setDetailLoading(false)
     }
+  }
+
+  function handleTogglePublish() {
+    if (!selectedId || !detail) return
+    startTransition(async () => {
+      const res = await publishSubmission(selectedId, !detail.published)
+      if (!res.success) {
+        toast({ title: "Fehler", description: res.error, variant: "destructive" })
+        return
+      }
+      toast({ title: detail.published ? "Depubliziert" : "Veroeffentlicht" })
+      await openDetail(selectedId)
+      refresh()
+    })
+  }
+
+  function handleSaveTags() {
+    if (!selectedId) return
+    const tags = tagsInput
+      .split(",")
+      .map((t) => t.trim())
+      .filter((t) => t.length > 0)
+    startTransition(async () => {
+      const res = await setSubmissionTags(selectedId, tags)
+      if (!res.success) {
+        toast({ title: "Fehler", variant: "destructive" })
+        return
+      }
+      toast({ title: "Tags gespeichert" })
+      await openDetail(selectedId)
+    })
   }
 
   function closeDetail() {
@@ -297,6 +332,52 @@ export function ReviewQueueClient({ initialSubmissions }: ReviewQueueClientProps
                 {detail.reviewedAt &&
                   ` · Geprueft: ${new Date(detail.reviewedAt).toLocaleDateString("de-DE")}`}
               </div>
+
+              {detail.status === "APPROVED" && (
+                <div className="space-y-3 border-t pt-4">
+                  <h4 className="font-semibold">Showcase</h4>
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="text-sm">
+                      <div className="font-medium">
+                        {detail.published
+                          ? "Veroeffentlicht in Showcase"
+                          : "Nicht veroeffentlicht"}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {detail.likes ?? 0} Likes
+                      </div>
+                    </div>
+                    <Button
+                      variant={detail.published ? "outline" : "default"}
+                      size="sm"
+                      onClick={handleTogglePublish}
+                      disabled={isPending}
+                    >
+                      {detail.published ? "Depublizieren" : "Veroeffentlichen"}
+                    </Button>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-muted-foreground">
+                      Tags (Komma-getrennt)
+                    </label>
+                    <div className="flex gap-2">
+                      <Input
+                        value={tagsInput}
+                        onChange={(e) => setTagsInput(e.target.value)}
+                        placeholder="z. B. angebot, copilot, vorlage"
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleSaveTags}
+                        disabled={isPending}
+                      >
+                        Speichern
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

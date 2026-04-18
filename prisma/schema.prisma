@@ -472,6 +472,9 @@ model WorkProductSubmission {
   submittedAt   DateTime         @default(now())
   reviewedAt    DateTime?
   updatedAt     DateTime         @updatedAt
+  published     Boolean          @default(false)
+  tags          String[]         @default([])
+  likes         Int              @default(0)
 
   user     User   @relation("SubmissionAuthor", fields: [userId], references: [id], onDelete: Cascade)
   module   Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)

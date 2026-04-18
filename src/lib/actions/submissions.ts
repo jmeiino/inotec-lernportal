@@ -206,6 +206,9 @@ export async function getSubmissionDetail(submissionId: string) {
     reviewNotes: submission.reviewNotes,
     submittedAt: submission.submittedAt.toISOString(),
     reviewedAt: submission.reviewedAt?.toISOString() ?? null,
+    published: submission.published,
+    tags: submission.tags,
+    likes: submission.likes,
     user: submission.user,
     module: {
       id: submission.module.id,

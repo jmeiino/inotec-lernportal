@@ -8,6 +8,7 @@ import {
   BookOpen,
   Award,
   ClipboardList,
+  Sparkles,
   Menu,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -23,6 +24,7 @@ import { UserMenu } from "./user-menu"
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/catalog", label: "Kurskatalog", icon: BookOpen },
+  { href: "/showcase", label: "Showcase", icon: Sparkles },
   { href: "/surveys", label: "Umfragen", icon: ClipboardList },
   { href: "/certificates", label: "Meine Zertifikate", icon: Award },
 ]
