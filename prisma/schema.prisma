@@ -67,6 +67,14 @@ enum Tool {
   OPENWEBUI
 }
 
+enum EventType {
+  KURS
+  STAMMTISCH
+  SHOWCASE
+  STRATEGIC_REVIEW
+  L3_COMMUNITY
+}
+
 model ModuleFeedback {
   id          String   @id @default(uuid())
   userId      String
@@ -353,20 +361,26 @@ model Certificate {
 }
 
 model Schedule {
-  id              String   @id @default(uuid())
-  moduleId        String
+  id              String    @id @default(uuid())
+  moduleId        String?
+  eventType       EventType @default(KURS)
+  title           String?
+  description     String?   @db.Text
   location        String
   startTime       DateTime
   endTime         DateTime
   maxParticipants Int
   trainerId       String
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
-  module  Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)
-  trainer User   @relation("TrainerSchedules", fields: [trainerId], references: [id])
+  module  Module? @relation(fields: [moduleId], references: [id], onDelete: SetNull)
+  trainer User    @relation("TrainerSchedules", fields: [trainerId], references: [id])
 
   registrations ScheduleRegistration[]
+
+  @@index([eventType])
+  @@index([startTime])
 }
 
 model ToolAccess {

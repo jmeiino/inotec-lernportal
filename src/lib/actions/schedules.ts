@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache"
 
 export type ScheduleWithDetails = {
   id: string
-  moduleId: string
+  moduleId: string | null
   moduleTitle: string
   moduleCode: string
   location: string
@@ -51,8 +51,8 @@ export async function getSchedules(filters?: {
     return schedules.map((s) => ({
       id: s.id,
       moduleId: s.moduleId,
-      moduleTitle: s.module.title,
-      moduleCode: s.module.code,
+      moduleTitle: s.module?.title ?? "",
+      moduleCode: s.module?.code ?? "",
       location: s.location,
       startTime: s.startTime,
       endTime: s.endTime,
@@ -312,9 +312,9 @@ export async function getUpcomingUserSchedules(userId: string, limit = 3) {
 
     return registrations.map((r) => ({
       id: r.schedule.id,
-      moduleId: r.schedule.module.id,
-      moduleTitle: r.schedule.module.title,
-      moduleCode: r.schedule.module.code,
+      moduleId: r.schedule.module?.id ?? null,
+      moduleTitle: r.schedule.module?.title ?? "",
+      moduleCode: r.schedule.module?.code ?? "",
       location: r.schedule.location,
       startTime: r.schedule.startTime,
       endTime: r.schedule.endTime,
@@ -341,8 +341,8 @@ export async function getScheduleById(scheduleId: string) {
     return {
       id: schedule.id,
       moduleId: schedule.moduleId,
-      moduleTitle: schedule.module.title,
-      moduleCode: schedule.module.code,
+      moduleTitle: schedule.module?.title ?? "",
+      moduleCode: schedule.module?.code ?? "",
       location: schedule.location,
       startTime: schedule.startTime,
       endTime: schedule.endTime,

@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   BookOpen,
   Award,
+  Calendar,
   ClipboardList,
   Sparkles,
   Users,
@@ -25,6 +26,7 @@ import { UserMenu } from "./user-menu"
 const baseNavItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/catalog", label: "Kurskatalog", icon: BookOpen },
+  { href: "/events", label: "Termine", icon: Calendar },
   { href: "/showcase", label: "Showcase", icon: Sparkles },
   { href: "/surveys", label: "Umfragen", icon: ClipboardList },
   { href: "/certificates", label: "Meine Zertifikate", icon: Award },

@@ -30,12 +30,15 @@ export async function GET(
       return NextResponse.json({ error: "Nicht gefunden" }, { status: 404 })
     }
 
-    const summary = escapeICalText(
-      `${schedule.module.code} - ${schedule.module.title}`
-    )
+    const summaryText = schedule.module
+      ? `${schedule.module.code} - ${schedule.module.title}`
+      : schedule.title ?? schedule.eventType
+    const summary = escapeICalText(summaryText)
     const location = escapeICalText(schedule.location)
     const description = escapeICalText(
-      `Praesenztermin fuer Modul ${schedule.module.code}`
+      schedule.module
+        ? `Praesenztermin fuer Modul ${schedule.module.code}`
+        : schedule.description ?? `${schedule.eventType} Termin`
     )
 
     const ical = [
@@ -59,10 +62,9 @@ export async function GET(
     return new NextResponse(ical, {
       headers: {
         "Content-Type": "text/calendar; charset=utf-8",
-        "Content-Disposition": `attachment; filename="${schedule.module.code}-${format(
-          schedule.startTime,
-          "yyyy-MM-dd"
-        )}.ics"`,
+        "Content-Disposition": `attachment; filename="${
+          schedule.module?.code ?? schedule.eventType.toLowerCase()
+        }-${format(schedule.startTime, "yyyy-MM-dd")}.ics"`,
       },
     })
   } catch (error) {

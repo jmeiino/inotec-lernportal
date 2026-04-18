@@ -8,6 +8,7 @@ import type {
   SurveyType,
   SurveyQuestionType,
   Tool,
+  EventType,
 } from "@prisma/client"
 
 export function cn(...inputs: ClassValue[]) {
@@ -112,4 +113,16 @@ const TOOL_LABEL: Record<Tool, string> = {
 
 export function formatTool(tool: Tool): string {
   return TOOL_LABEL[tool] ?? tool
+}
+
+const EVENT_TYPE_LABEL: Record<EventType, string> = {
+  KURS: "Kurs-Termin",
+  STAMMTISCH: "KI-Stammtisch",
+  SHOWCASE: "Showcase",
+  STRATEGIC_REVIEW: "Strategische Review",
+  L3_COMMUNITY: "L3-Community",
+}
+
+export function formatEventType(type: EventType): string {
+  return EVENT_TYPE_LABEL[type] ?? type
 }

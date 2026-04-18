@@ -133,7 +133,7 @@ export function CalendarClient() {
 
   const openEditDialog = (schedule: ScheduleWithDetails) => {
     setEditingSchedule(schedule)
-    setFormModuleId(schedule.moduleId)
+    setFormModuleId(schedule.moduleId ?? "")
     setFormLocation(schedule.location)
     setFormDate(format(new Date(schedule.startTime), "yyyy-MM-dd"))
     setFormStartTime(format(new Date(schedule.startTime), "HH:mm"))

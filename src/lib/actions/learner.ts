@@ -173,8 +173,8 @@ export async function getDashboardData(userId: string) {
 
     const upcomingSchedules = scheduleRegistrations.map((reg) => ({
       id: reg.schedule.id,
-      moduleTitle: reg.schedule.module.title,
-      moduleCode: reg.schedule.module.code,
+      moduleTitle: reg.schedule.module?.title ?? "",
+      moduleCode: reg.schedule.module?.code ?? "",
       location: reg.schedule.location,
       startTime: reg.schedule.startTime,
       endTime: reg.schedule.endTime,
