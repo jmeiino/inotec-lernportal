@@ -37,6 +37,10 @@ import {
   getEffectiveToolAccess,
   setToolAccess,
 } from "@/lib/actions/tools"
+import {
+  listPossibleManagers,
+  setUserManager,
+} from "@/lib/actions/team"
 import { TOOL_LIST } from "@/lib/tool-constants"
 import type { Role, BusinessRole, Tool } from "@prisma/client"
 import { formatBusinessRole, formatTool } from "@/lib/utils"
@@ -81,21 +85,41 @@ export function UserDetailDialog({
   const [toolAccess, setToolAccessState] = useState<Record<Tool, boolean> | null>(
     null
   )
+  const [managers, setManagers] = useState<{ id: string; name: string; email: string }[]>([])
 
   useEffect(() => {
     if (userId && open) {
       setLoading(true)
-      Promise.all([getUserDetail(userId), getEffectiveToolAccess(userId)])
-        .then(([u, access]) => {
+      Promise.all([
+        getUserDetail(userId),
+        getEffectiveToolAccess(userId),
+        listPossibleManagers(),
+      ])
+        .then(([u, access, mgrs]) => {
           setUser(u)
           setToolAccessState(access)
+          setManagers(mgrs.filter((m) => m.id !== userId))
         })
         .finally(() => setLoading(false))
     } else {
       setUser(null)
       setToolAccessState(null)
+      setManagers([])
     }
   }, [userId, open])
+
+  async function handleManagerChange(value: string) {
+    if (!userId) return
+    setActionLoading(true)
+    try {
+      await setUserManager(userId, value === "__none__" ? null : value)
+      const updated = await getUserDetail(userId)
+      setUser(updated)
+      onUpdated()
+    } finally {
+      setActionLoading(false)
+    }
+  }
 
   async function handleToolToggle(tool: Tool, enabled: boolean) {
     if (!userId) return
@@ -228,6 +252,26 @@ export function UserDetailDialog({
                     {BUSINESS_ROLES.map((r) => (
                       <SelectItem key={r} value={r}>
                         {formatBusinessRole(r)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-2 col-span-2">
+                <span className="text-muted-foreground">Fuehrungskraft:</span>
+                <Select
+                  value={user.managerId ?? "__none__"}
+                  onValueChange={handleManagerChange}
+                  disabled={actionLoading}
+                >
+                  <SelectTrigger className="w-60 h-8">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">— keine —</SelectItem>
+                    {managers.map((m) => (
+                      <SelectItem key={m.id} value={m.id}>
+                        {m.name}
                       </SelectItem>
                     ))}
                   </SelectContent>

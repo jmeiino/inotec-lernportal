@@ -9,6 +9,7 @@ import {
   Award,
   ClipboardList,
   Sparkles,
+  Users,
   Menu,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -21,7 +22,7 @@ import {
 } from "@/components/ui/sheet"
 import { UserMenu } from "./user-menu"
 
-const navItems = [
+const baseNavItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/catalog", label: "Kurskatalog", icon: BookOpen },
   { href: "/showcase", label: "Showcase", icon: Sparkles },
@@ -29,8 +30,21 @@ const navItems = [
   { href: "/certificates", label: "Meine Zertifikate", icon: Award },
 ]
 
-function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
+function SidebarContent({
+  onNavigate,
+  hasTeam,
+}: {
+  onNavigate?: () => void
+  hasTeam?: boolean
+}) {
   const pathname = usePathname()
+  const navItems = hasTeam
+    ? [
+        ...baseNavItems.slice(0, 1),
+        { href: "/my-team", label: "Mein Team", icon: Users },
+        ...baseNavItems.slice(1),
+      ]
+    : baseNavItems
 
   return (
     <div className="flex flex-col h-full">
@@ -67,14 +81,14 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   )
 }
 
-export function LearnerSidebar() {
+export function LearnerSidebar({ hasTeam }: { hasTeam?: boolean }) {
   const [open, setOpen] = React.useState(false)
 
   return (
     <>
       {/* Desktop sidebar */}
       <aside className="hidden md:flex md:w-64 md:flex-col bg-card border-r shrink-0">
-        <SidebarContent />
+        <SidebarContent hasTeam={hasTeam} />
       </aside>
 
       {/* Mobile header */}
@@ -92,7 +106,7 @@ export function LearnerSidebar() {
           </SheetTrigger>
           <SheetContent side="left" className="p-0 w-64">
             <SheetTitle className="sr-only">Navigation</SheetTitle>
-            <SidebarContent onNavigate={() => setOpen(false)} />
+            <SidebarContent hasTeam={hasTeam} onNavigate={() => setOpen(false)} />
           </SheetContent>
         </Sheet>
       </header>

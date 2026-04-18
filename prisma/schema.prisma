@@ -120,8 +120,12 @@ model User {
   role         Role          @default(LEARNER)
   department   String?
   businessRole BusinessRole?
+  managerId    String?
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
+
+  manager User?  @relation("ManagerReports", fields: [managerId], references: [id])
+  reports User[] @relation("ManagerReports")
 
   enrollments      Enrollment[]
   progress         ModuleProgress[]

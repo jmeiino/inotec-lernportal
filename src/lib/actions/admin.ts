@@ -296,6 +296,7 @@ export async function getUserDetail(userId: string) {
   const user = await prisma.user.findUniqueOrThrow({
     where: { id: userId },
     include: {
+      manager: { select: { id: true, name: true } },
       enrollments: {
         include: {
           track: {
@@ -338,6 +339,8 @@ export async function getUserDetail(userId: string) {
     department: user.department,
     businessRole: user.businessRole,
     role: user.role,
+    managerId: user.managerId,
+    managerName: user.manager?.name ?? null,
     createdAt: user.createdAt.toISOString(),
     enrollments: user.enrollments.map((e) => ({
       id: e.id,
