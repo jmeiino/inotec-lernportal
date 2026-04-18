@@ -10,6 +10,7 @@ import {
   Calendar,
   ClipboardList,
   Sparkles,
+  TrendingUp,
   Users,
   Menu,
 } from "lucide-react"
@@ -29,6 +30,7 @@ const baseNavItems = [
   { href: "/catalog", label: "Kurskatalog", icon: BookOpen },
   { href: "/events", label: "Termine", icon: Calendar },
   { href: "/showcase", label: "Showcase", icon: Sparkles },
+  { href: "/impact", label: "Impact-Stories", icon: TrendingUp },
   { href: "/surveys", label: "Umfragen", icon: ClipboardList },
   { href: "/certificates", label: "Meine Zertifikate", icon: Award },
 ]

@@ -85,6 +85,22 @@ enum NotificationType {
   GENERIC
 }
 
+model ImpactStory {
+  id          String    @id @default(uuid())
+  authorId    String
+  title       String
+  problem     String    @db.Text
+  solution    String    @db.Text
+  metric      String?
+  tags        String[]  @default([])
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([authorId])
+  @@index([publishedAt])
+}
+
 model Notification {
   id        String           @id @default(uuid())
   userId    String
