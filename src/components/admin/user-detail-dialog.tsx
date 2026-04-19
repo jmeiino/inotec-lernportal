@@ -257,6 +257,14 @@ export function UserDetailDialog({
                   </SelectContent>
                 </Select>
               </div>
+              <div className="col-span-2">
+                <a
+                  href={`/api/users/${user.id}/yearly-report`}
+                  className="text-xs text-primary hover:underline"
+                >
+                  Jahresbericht (CSV) herunterladen
+                </a>
+              </div>
               <div className="flex items-center gap-2 col-span-2">
                 <span className="text-muted-foreground">Fuehrungskraft:</span>
                 <Select
