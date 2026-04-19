@@ -85,6 +85,21 @@ enum NotificationType {
   GENERIC
 }
 
+model PromptTemplate {
+  id           String        @id @default(uuid())
+  authorId     String
+  title        String
+  body         String        @db.Text
+  businessRole BusinessRole?
+  tool         Tool?
+  tags         String[]      @default([])
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@index([businessRole])
+  @@index([tool])
+}
+
 model AuditLog {
   id         String   @id @default(uuid())
   actorId    String
