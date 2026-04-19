@@ -141,10 +141,14 @@ export async function getMySubmissionsForModule(moduleId: string) {
 export interface ReviewQueueFilters {
   status?: SubmissionStatus | "ALL"
   moduleId?: string
+  scope?: "MINE" | "ALL"
 }
 
 export async function getReviewQueue(filters: ReviewQueueFilters = {}) {
-  await requireReviewer()
+  const session = await requireReviewer()
+
+  const isAdminOrTrainer = ["ADMIN", "TRAINER"].includes(session.user.role)
+  const scope = filters.scope ?? (isAdminOrTrainer ? "ALL" : "MINE")
 
   const where: Record<string, unknown> = {}
   if (filters.status && filters.status !== "ALL") {
@@ -157,12 +161,34 @@ export async function getReviewQueue(filters: ReviewQueueFilters = {}) {
   if (filters.moduleId) {
     where.moduleId = filters.moduleId
   }
+  if (scope === "MINE" && !isAdminOrTrainer) {
+    const me = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { businessRole: true, department: true },
+    })
+    if (me?.businessRole || me?.department) {
+      where.user = {
+        OR: [
+          me.businessRole ? { businessRole: me.businessRole } : undefined,
+          me.department ? { department: me.department } : undefined,
+        ].filter(Boolean) as Array<Record<string, unknown>>,
+      }
+    }
+  }
 
   const submissions = await prisma.workProductSubmission.findMany({
     where,
     orderBy: [{ status: "asc" }, { submittedAt: "asc" }],
     include: {
-      user: { select: { id: true, name: true, email: true, businessRole: true } },
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          businessRole: true,
+          department: true,
+        },
+      },
       module: {
         select: {
           id: true,

@@ -50,11 +50,16 @@ type Detail = Awaited<ReturnType<typeof getSubmissionDetail>>
 
 interface ReviewQueueClientProps {
   initialSubmissions: QueueItem[]
+  canToggleScope?: boolean
 }
 
-export function ReviewQueueClient({ initialSubmissions }: ReviewQueueClientProps) {
+export function ReviewQueueClient({
+  initialSubmissions,
+  canToggleScope,
+}: ReviewQueueClientProps) {
   const [items, setItems] = useState<QueueItem[]>(initialSubmissions)
   const [statusFilter, setStatusFilter] = useState<SubmissionStatus | "ALL">("ALL")
+  const [scope, setScope] = useState<"ALL" | "MINE">("ALL")
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [detail, setDetail] = useState<Detail>(null)
   const [detailLoading, setDetailLoading] = useState(false)
@@ -63,13 +68,16 @@ export function ReviewQueueClient({ initialSubmissions }: ReviewQueueClientProps
   const [isPending, startTransition] = useTransition()
 
   const refresh = useCallback(
-    (nextFilter: SubmissionStatus | "ALL" = statusFilter) => {
+    (
+      nextFilter: SubmissionStatus | "ALL" = statusFilter,
+      nextScope: "ALL" | "MINE" = scope
+    ) => {
       startTransition(async () => {
-        const data = await getReviewQueue({ status: nextFilter })
+        const data = await getReviewQueue({ status: nextFilter, scope: nextScope })
         setItems(data)
       })
     },
-    [statusFilter]
+    [statusFilter, scope]
   )
 
   async function openDetail(id: string) {
@@ -174,13 +182,13 @@ export function ReviewQueueClient({ initialSubmissions }: ReviewQueueClientProps
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 flex-wrap">
         <Select
           value={statusFilter}
           onValueChange={(v) => {
             const next = v as SubmissionStatus | "ALL"
             setStatusFilter(next)
-            refresh(next)
+            refresh(next, scope)
           }}
         >
           <SelectTrigger className="w-52">
@@ -194,6 +202,24 @@ export function ReviewQueueClient({ initialSubmissions }: ReviewQueueClientProps
             <SelectItem value="REWORK">Nacharbeit</SelectItem>
           </SelectContent>
         </Select>
+        {canToggleScope && (
+          <Select
+            value={scope}
+            onValueChange={(v) => {
+              const next = v as "ALL" | "MINE"
+              setScope(next)
+              refresh(statusFilter, next)
+            }}
+          >
+            <SelectTrigger className="w-52">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">Alle Abteilungen</SelectItem>
+              <SelectItem value="MINE">Nur meine Abteilung/Rolle</SelectItem>
+            </SelectContent>
+          </Select>
+        )}
         <span className="text-sm text-muted-foreground">
           {items.length} Einreichung{items.length === 1 ? "" : "en"}
         </span>

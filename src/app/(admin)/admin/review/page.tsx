@@ -3,7 +3,8 @@ import { getReviewQueue } from "@/lib/actions/submissions"
 import { ReviewQueueClient } from "./review-client"
 
 export default async function ReviewQueuePage() {
-  await requireReviewer()
+  const session = await requireReviewer()
+  const isAdminOrTrainer = ["ADMIN", "TRAINER"].includes(session.user.role)
   const initial = await getReviewQueue({ status: "ALL" })
 
   return (
@@ -14,7 +15,10 @@ export default async function ReviewQueuePage() {
           Arbeitsprodukt-Nachweise der Lernenden pruefen und freigeben.
         </p>
       </div>
-      <ReviewQueueClient initialSubmissions={initial} />
+      <ReviewQueueClient
+        initialSubmissions={initial}
+        canToggleScope={isAdminOrTrainer}
+      />
     </div>
   )
 }
