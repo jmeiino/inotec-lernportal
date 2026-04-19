@@ -10,6 +10,7 @@ import { revalidatePath } from "next/cache"
 import { Tool } from "@prisma/client"
 import { Prisma } from "@prisma/client"
 import { TOOL_LIST, DEFAULT_TOOL_ENABLED } from "@/lib/tool-constants"
+import { writeAudit } from "@/lib/actions/audit"
 
 async function loadAccessMap(userId: string): Promise<Record<Tool, boolean>> {
   const rows = await prisma.toolAccess.findMany({
@@ -38,10 +39,24 @@ export async function setToolAccess(
 ) {
   const session = await requireAdmin()
 
+  const before = await prisma.toolAccess.findUnique({
+    where: { userId_tool: { userId, tool } },
+    select: { enabled: true },
+  })
+
   await prisma.toolAccess.upsert({
     where: { userId_tool: { userId, tool } },
     update: { enabled, updatedBy: session.user.id },
     create: { userId, tool, enabled, updatedBy: session.user.id },
+  })
+
+  await writeAudit({
+    actorId: session.user.id,
+    action: "TOOL_ACCESS_CHANGE",
+    targetType: "User",
+    targetId: userId,
+    before: { tool, enabled: before?.enabled ?? null },
+    after: { tool, enabled },
   })
 
   revalidatePath("/admin/tools")

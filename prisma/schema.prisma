@@ -85,6 +85,22 @@ enum NotificationType {
   GENERIC
 }
 
+model AuditLog {
+  id         String   @id @default(uuid())
+  actorId    String
+  action     String
+  targetType String
+  targetId   String?
+  beforeJson Json?
+  afterJson  Json?
+  createdAt  DateTime @default(now())
+
+  @@index([actorId])
+  @@index([action])
+  @@index([targetType, targetId])
+  @@index([createdAt])
+}
+
 model RoleAssignment {
   id           String   @id @default(uuid())
   userId       String

@@ -12,6 +12,7 @@ import {
   Calendar,
   Grid3x3,
   MessageSquare,
+  ShieldCheck,
   Sparkles,
   ArrowLeft,
   Menu,
@@ -44,6 +45,7 @@ const navItems: NavItem[] = [
   { href: "/admin/surveys", label: "Umfragen", icon: MessageSquare, allowed: ["ADMIN"] },
   { href: "/admin/heatmap", label: "Heatmap", icon: Grid3x3, allowed: ["ADMIN", "TRAINER", "MULTIPLICATOR", "CHAMPION"] },
   { href: "/admin/role-assignments", label: "Rollen-Zuweisungen", icon: Users, allowed: ["ADMIN"] },
+  { href: "/admin/audit", label: "Audit-Log", icon: ShieldCheck, allowed: ["ADMIN"] },
   { href: "/admin/tools", label: "KI-Tools", icon: Sparkles, allowed: ["ADMIN", "TRAINER"] },
   { href: "/admin/calendar", label: "Kalender", icon: Calendar, allowed: ["ADMIN", "TRAINER"] },
 ]

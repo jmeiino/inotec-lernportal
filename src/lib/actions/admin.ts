@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { requireTrainer, requireAdmin } from "@/lib/auth-guard"
 import type { Role, BusinessRole } from "@prisma/client"
 import { SubmissionStatus, SurveyType, Tool } from "@prisma/client"
+import { writeAudit } from "@/lib/actions/audit"
 
 export async function getExtendedKpis() {
   await requireTrainer()
@@ -506,11 +507,25 @@ export async function getUserDetail(userId: string) {
 }
 
 export async function updateUserRole(userId: string, role: Role) {
-  await requireAdmin()
+  const session = await requireAdmin()
+
+  const before = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { role: true },
+  })
 
   await prisma.user.update({
     where: { id: userId },
     data: { role },
+  })
+
+  await writeAudit({
+    actorId: session.user.id,
+    action: "ROLE_CHANGE",
+    targetType: "User",
+    targetId: userId,
+    before: { role: before?.role ?? null },
+    after: { role },
   })
 
   return { success: true }
@@ -520,11 +535,25 @@ export async function updateUserBusinessRole(
   userId: string,
   businessRole: BusinessRole | null
 ) {
-  await requireAdmin()
+  const session = await requireAdmin()
+
+  const before = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { businessRole: true },
+  })
 
   await prisma.user.update({
     where: { id: userId },
     data: { businessRole },
+  })
+
+  await writeAudit({
+    actorId: session.user.id,
+    action: "BUSINESS_ROLE_CHANGE",
+    targetType: "User",
+    targetId: userId,
+    before: { businessRole: before?.businessRole ?? null },
+    after: { businessRole },
   })
 
   return { success: true }

@@ -9,6 +9,7 @@ import {
   createNotification,
   createNotificationForMany,
 } from "@/lib/actions/notifications"
+import { writeAudit } from "@/lib/actions/audit"
 
 const REVIEWER_ROLES = ["ADMIN", "TRAINER", "MULTIPLICATOR", "CHAMPION"] as const
 
@@ -294,6 +295,15 @@ export async function approveSubmission(submissionId: string, notes?: string) {
   // Neu berechnen, ob das Modul damit voll abgeschlossen ist
   await recalculateModuleProgress(existing.userId, existing.moduleId)
 
+  await writeAudit({
+    actorId: session.user.id,
+    action: "WP_APPROVED",
+    targetType: "WorkProductSubmission",
+    targetId: submissionId,
+    before: { status: existing.status },
+    after: { status: "APPROVED", reviewNotes: notes?.trim() || null },
+  })
+
   // Autor benachrichtigen
   await createNotification({
     userId: existing.userId,
@@ -335,6 +345,15 @@ export async function requestRework(submissionId: string, notes: string) {
       reviewNotes: notes.trim(),
       reviewedAt: new Date(),
     },
+  })
+
+  await writeAudit({
+    actorId: session.user.id,
+    action: "WP_REWORK",
+    targetType: "WorkProductSubmission",
+    targetId: submissionId,
+    before: { status: existing.status },
+    after: { status: "REWORK", reviewNotes: notes.trim() },
   })
 
   const author = await prisma.workProductSubmission.findUnique({
