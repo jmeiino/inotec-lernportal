@@ -85,6 +85,21 @@ enum NotificationType {
   GENERIC
 }
 
+model StrategicReviewDecision {
+  id         String    @id @default(uuid())
+  reviewDate DateTime
+  topic      String
+  decision   String    @db.Text
+  ownerId    String?
+  dueDate    DateTime?
+  status     String    @default("OPEN")
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([reviewDate])
+  @@index([status])
+}
+
 model PromptTemplate {
   id           String        @id @default(uuid())
   authorId     String
