@@ -21,10 +21,15 @@ import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { formatCompetenceLevel } from "@/lib/utils"
 import { PyramidView } from "@/components/layout/pyramid-view"
+import { getRecommendedTracks } from "@/lib/actions/recommendations"
+import { RecommendedTracks } from "@/components/recommendations/recommended-tracks"
 
 export default async function DashboardPage() {
   const session = await requireAuth()
-  const data = await getDashboardData(session.user.id)
+  const [data, recommendations] = await Promise.all([
+    getDashboardData(session.user.id),
+    getRecommendedTracks(),
+  ])
 
   return (
     <div className="space-y-6">
@@ -80,6 +85,9 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Empfehlungen */}
+      <RecommendedTracks items={recommendations} />
 
       {/* Kompetenz-Pyramiden */}
       <div className="grid gap-4 lg:grid-cols-2">
